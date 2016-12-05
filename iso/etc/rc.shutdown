@@ -1,0 +1,8 @@
+#!/bin/sh
+
+/bin/umount -a -d -n -r -t nodevtmpfs
+if [ "$RUNLEVEL" == "0" ]; then
+	/sbin/poweroff -n -d -f
+else
+	/sbin/reboot -n -d -f
+fi

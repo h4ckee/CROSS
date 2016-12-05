@@ -1,0 +1,46 @@
+# Description: Inetd daemon, FTP and telnet client
+# URL:         http://www.gnu.org/software/inetutils/inetutils.html
+# Depends on:
+
+name=inetutils
+version=1.9.4
+release=1
+source=(http://ftp.gnu.org/gnu/$name/$name-$version.tar.gz \
+	domainname dnsdomainname syslog syslogd syslog.conf rotatelog)
+
+build() {
+	cd $name-$version
+
+	sed -i -e '/gets is a/d' lib/stdio.in.h
+	echo '#define PATH_PROCNET_DEV "/proc/net/dev"' >> ifconfig/system/linux.h
+
+	./configure --prefix=/usr \
+		--libexecdir=/usr/sbin \
+		--mandir=/usr/man \
+		--localstatedir=/var \
+		--sysconfdir=/etc \
+		--without-wrap \
+		--disable-readline \
+		--disable-{servers,clients} \
+		--enable-threads=posix \
+		--enable-{hostname,ifconfig,syslogd,whois,ftp,telnet,traceroute}
+
+	make
+	make DESTDIR=$PKG install
+
+	install -D -m755 $SRC/domainname $PKG/bin/domainname
+	install -D -m755 $SRC/dnsdomainname $PKG/bin/dnsdomainname
+	install -D -m755 $SRC/rotatelog $PKG/usr/sbin/rotatelog
+	install -D -m755 $SRC/syslog $PKG/etc/cron/daily/syslog
+	install -D -m755 $SRC/syslogd $PKG/etc/rc.d/syslogd
+	install -D -m644 $SRC/syslog.conf $PKG/etc/syslog.conf
+
+	mkdir $PKG/sbin
+	mv $PKG/usr/bin/hostname $PKG/bin/
+	mv $PKG/usr/bin/ifconfig $PKG/sbin/
+
+	echo ".so man1/hostname.1" > $PKG/usr/man/man1/domainname.1
+	echo ".so man1/hostname.1" > $PKG/usr/man/man1/dnsdomainname.1
+
+	rm -r $PKG/usr/share
+}

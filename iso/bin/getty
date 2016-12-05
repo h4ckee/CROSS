@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+	echo "Usage: $0 tty"
+	exit 1
+fi
+
+if [ ! -c "/dev/$1" ]; then
+	echo "ERROR: /dev/$1 does not exist or is not a character device"
+	exit 1
+fi
+
+exec >/dev/$1 2>&1 </dev/$1
+
+set -a
+export USER='root'
+export HOME='/root'
+export SHELL='/bin/mksh'
+export LOGNAME="$USER"
+
+cd $HOME
+exec /bin/mksh -l

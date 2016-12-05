@@ -1,0 +1,20 @@
+# Description: The MirBSD Korn Shell
+# URL: http://www.mirbsd.org/mksh.htm
+
+name=mksh
+version=R51
+release=1
+source=(http://www.mirbsd.org/MirOS/dist/mir/mksh/$name-$version.tgz profile shrc)
+
+build() {
+	cd $name
+
+	sh Build.sh -r
+
+	install -D -m 0755 $name $PKG/bin/$name
+	install -D -m 0644 $name.1 $PKG/usr/man/man1/$name.1
+	install -D -m 0644 $SRC/profile $PKG/etc/profile
+	install -D -m 0644 $SRC/shrc $PKG/etc/skel/.shrc
+
+	ln -s mksh $PKG/bin/sh
+}

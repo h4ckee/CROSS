@@ -1,0 +1,140 @@
+diff -Naur a/ports.8.in b/ports.8.in
+--- a/ports.8.in	2003-10-19 18:40:45.000000000 +0400
++++ b/ports.8.in	2015-01-27 11:09:12.508276446 +0300
+@@ -25,7 +25,7 @@
+ Print help and exit.
+ .SH FILES
+ .TP
+-.B "/usr/ports/"  
++.B "/var/ports/"  
+ Root of local ports collection.
+ .TP
+ .B "/etc/ports/"
+diff -Naur a/ports.in b/ports.in
+--- a/ports.in	2004-03-07 23:55:24.000000000 +0300
++++ b/ports.in	2015-01-27 11:11:23.984940751 +0300
+@@ -1,9 +1,9 @@
+-#!/bin/bash
++#!/bin/sh
+ #
+ #  ports
+-# 
++#
+ #  Copyright (c) 2002-2004 Per Liden
+-# 
++#
+ #  This program is free software; you can redistribute it and/or modify
+ #  it under the terms of the GNU General Public License as published by
+ #  the Free Software Foundation; either version 2 of the License, or
+@@ -16,12 +16,12 @@
+ #
+ #  You should have received a copy of the GNU General Public License
+ #  along with this program; if not, write to the Free Software
+-#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, 
++#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+ #  USA.
+ #
+ 
+ VERSION="#VERSION#"
+-PORTS_DIR="/usr/ports"
++PORTS_DIR="/var/ports"
+ 
+ check_ports_dir() {
+ 	if [ ! -d "$PORTS_DIR" ]; then
+@@ -36,7 +36,6 @@
+ 		exit 1
+ 	fi
+ 
+-	shopt -s nullglob
+ 	export PORTS_DIR
+ 
+ 	if [ "$OPT_COLLECTIONS" ]; then
+@@ -49,7 +48,7 @@
+ 			if [ "$collection_exists" = "yes" ]; then
+ 				for driver in /etc/ports/drivers/*; do
+ 					if [ -x $driver ]; then
+-						suffix=`basename $driver`
++						suffix=${driver##*/}
+ 						file=/etc/ports/$collection.$suffix
+ 						if [ -f $file ]; then
+ 							$driver $file
+@@ -64,13 +63,15 @@
+ 		# Update all collections
+ 		for driver in /etc/ports/drivers/*; do
+ 			if [ -x $driver ]; then
+-				suffix=`basename $driver`
++				suffix=${driver##*/}
+ 				for file in /etc/ports/*.$suffix; do
+-					$driver $file
++					if [ -f $file ]; then
++						$driver $file
++					fi
+ 				done
+ 			fi
+ 		done
+-		
++
+ 		if [ ! "$driver" ]; then
+ 			echo "$COMMAND: no driver(s) installed"
+ 		fi
+@@ -78,7 +79,7 @@
+ }
+ 
+ list_ports() {
+-	cd $PORTS_DIR && find . -name Pkgfile -follow -printf "%h\n" | sed 's|^./||g' | sort
++	cd $PORTS_DIR && find -L . -name Pkgfile -printf "%h\n" | sed 's|^./||g' | sort
+ }
+ 
+ list_differences_at_exit() {
+@@ -91,24 +92,24 @@
+ 	output=`mktemp` || exit 1
+ 	output_sorted=`mktemp` || exit 1
+ 	found_diff="no"
+-	
++
+ 	trap list_differences_at_exit EXIT
+-	
++
+ 	pkginfo -i >> $installed_list
+-	ports -l >> $ports_list
+-	
+-	for package in `cat $installed_list | gawk '{ print $1 }'`; do
+-		installed_version=`cat $installed_list | grep "^$package " | gawk '{ print $2 }'`
+-		port_list=`cat $ports_list | grep "/$package\$"`
++	list_ports >> $ports_list
++
++	for package in `gawk '{ print $1 }' $installed_list`; do
++		installed_version=`grep "^$package " $installed_list | gawk '{ print $2 }'`
++		port_list=`grep "/$package\$" $ports_list`
+ 		for port in $port_list; do
+-			port_version=`cd $PORTS_DIR/$port; . Pkgfile; echo $version-$release`
++			port_version=`cd $PORTS_DIR/$port; . ./Pkgfile; echo $version-$release`
+ 			if [ "$installed_version" != "$port_version" ]; then
+ 				echo "${port%/*} $package $port_version $installed_version" >> $output
+ 				found_diff="yes"
+ 			fi
+ 		done
+ 	done
+-	
++
+ 	if [ "$found_diff" = "yes" ]; then
+ 		echo "Collection Name Port Installed" >> $output_sorted
+ 		sort $output >> $output_sorted
+@@ -135,7 +136,7 @@
+ parse_options() {
+ 	OPT_MODE=""
+ 	OPT_COLLECTIONS=""
+-	
++
+ 	for OPT in "$@"; do
+ 		case $OPT in
+ 			-u|--update)
+@@ -181,7 +182,7 @@
+ 	exit 0
+ }
+ 
+-COMMAND=`basename $0`
++COMMAND=${0##*/}
+ 
+ main "$@"
+ 

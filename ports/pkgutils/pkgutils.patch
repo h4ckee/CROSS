@@ -1,0 +1,576 @@
+diff -Naur a/pkgadd.conf b/pkgadd.conf
+--- a/pkgadd.conf	2014-03-23 22:15:46.000000000 +0400
++++ b/pkgadd.conf	2015-02-06 07:35:01.992211619 +0300
+@@ -3,26 +3,33 @@
+ #
+ 
+ # Default rule (implicit)
+-#UPGRADE	^.*$			YES
++#UPGRADE	^.*$				YES
+ 
+-UPGRADE		^etc/.*$		NO
+-UPGRADE		^var/log/.*$		NO
+-UPGRADE		^var/spool/\w*cron/.*$	NO
+-UPGRADE		^var/run/utmp$		NO
+-
+-UPGRADE		^etc/ports/drivers/.*$	YES
+-UPGRADE		^etc/X11/.*$		YES
+-
+-UPGRADE		^etc/rc.*$		YES
+-UPGRADE		^etc/rc\.local$		NO
+-UPGRADE		^etc/rc\.modules$	NO
+-UPGRADE		^etc/rc\.conf$		NO
+-UPGRADE		^etc/rc\.d/net$		NO
+-
+-UPGRADE		^etc/udev/rules.d/.*$	YES
+-UPGRADE		^etc/udev/rules.d/1.*$	NO
+-UPGRADE		^etc/udev/hwdb.d/.*$	YES
+-UPGRADE		^etc/udev/hwdb.bin$	YES
++UPGRADE		^boot/syslinux/syslinux\.cfg$	NO
++UPGRADE		^etc/.*$			NO
++UPGRADE		^dev/$				NO
++UPGRADE		^home/$				NO
++UPGRADE		^proc/$				NO
++UPGRADE		^run/$				NO
++UPGRADE		^sys/$				NO
++UPGRADE		^tmp/$				NO
++
++UPGRADE		^var/log/.*$			NO
++UPGRADE		^var/spool/\w*cron/.*$		NO
++
++UPGRADE		^etc/X11/.*$			YES
++UPGRADE		^etc/fonts/.*$			YES
++UPGRADE		^etc/iproute2/.*$		YES
++UPGRADE		^etc/ports/drivers/.*$		YES
++UPGRADE		^etc/skel/.*$			YES
++UPGRADE		^etc/rc\.d/.*$			YES
++UPGRADE		^etc/rc\.d/rc\.local$		NO
++
++UPGRADE		^etc/udev/rules.d/.*$		YES
++UPGRADE		^etc/udev/rules.d/1.*$		NO
++UPGRADE		^etc/udev/hwdb.d/.*$		YES
++UPGRADE		^etc/udev/hwdb.bin$		YES
++
++UPGRADE		^etc/ssl/cert.pem$		YES
+ 
+-UPGRADE		^etc/ssl/cert.pem$	YES
+ # End of file
+diff -Naur a/pkgmk.conf b/pkgmk.conf
+--- a/pkgmk.conf	2014-03-23 22:15:46.000000000 +0400
++++ b/pkgmk.conf	2015-02-06 07:35:01.992211619 +0300
+@@ -2,35 +2,18 @@
+ # /etc/pkgmk.conf: pkgmk(8) configuration
+ #
+ 
+-export CFLAGS="-O2 -march=x86-64 -pipe"
+-export CXXFLAGS="${CFLAGS}"
++export CFLAGS="-march=native -O2 -pipe"
++export CXXFLAGS="$CFLAGS"
++export MAKEFLAGS="-j$(/usr/bin/getconf _NPROCESSORS_ONLN)"
+ 
+-# export MAKEFLAGS="-j2"
+-
+-case ${PKGMK_ARCH} in
+-	"64"|"")
+-		;;
+-	"32")
+-		export CFLAGS="${CFLAGS} -m32"
+-		export CXXFLAGS="${CXXFLAGS} -m32"
+-		export LDFLAGS="${LDFLAGS} -m32"
+-		export PKG_CONFIG_LIBDIR="/usr/lib32/pkgconfig"
+-		;;
+-	*)
+-		echo "Unknown architecture selected! Exiting."
+-		exit 1
+-		;;
+-esac
+-
+-# PKGMK_SOURCE_MIRRORS=()
+-# PKGMK_SOURCE_DIR="$PWD"
+-# PKGMK_PACKAGE_DIR="$PWD"
+-# PKGMK_WORK_DIR="$PWD/work"
+-# PKGMK_DOWNLOAD="no"
+-# PKGMK_IGNORE_FOOTPRINT="no"
+-# PKGMK_IGNORE_NEW="no"
+-# PKGMK_NO_STRIP="no"
+-# PKGMK_WGET_OPTS=""
+-# PKGMK_COMPRESSION_MODE="gz"
++PKGMK_SOURCE_MIRRORS=(ftp://gentoo.bloodhost.ru/distfiles/)
++PKGMK_SOURCE_DIR="/var/cache/src"
++PKGMK_PACKAGE_DIR="/var/cache/pkg"
++PKGMK_WORK_DIR="/var/obj/${PWD##*/}"
++PKGMK_DOWNLOAD="yes"
++PKGMK_IGNORE_FOOTPRINT="yes"
++PKGMK_NO_STRIP="no"
++PKGMK_WGET_OPTS=""
++PKGMK_COMPRESSION_MODE="xz"
+ 
+ # End of file
+diff -Naur a/pkgmk.in b/pkgmk.in
+--- a/pkgmk.in	2014-03-23 22:15:46.000000000 +0400
++++ b/pkgmk.in	2015-02-06 07:36:39.305541447 +0300
+@@ -1,10 +1,10 @@
+-#!/bin/bash
++#!/bin/sh
+ #
+ #  pkgutils
+-# 
++#
+ #  Copyright (c) 2000-2005 Per Liden
+ #  Copyright (c) 2006-2013 by CRUX team (http://crux.nu)
+-# 
++#
+ #  This program is free software; you can redistribute it and/or modify
+ #  it under the terms of the GNU General Public License as published by
+ #  the Free Software Foundation; either version 2 of the License, or
+@@ -17,7 +17,7 @@
+ #
+ #  You should have received a copy of the GNU General Public License
+ #  along with this program; if not, write to the Free Software
+-#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, 
++#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+ #  USA.
+ #
+ 
+@@ -46,15 +46,15 @@
+ }
+ 
+ get_filename() {
+-	if [[ $1 =~ ^(http|https|ftp|file)://.*/(.+) ]]; then
+-		echo "$PKGMK_SOURCE_DIR/${BASH_REMATCH[2]}"
++	if grep -qE "^(http|https|ftp|file)://" <<< $1; then
++		echo "$PKGMK_SOURCE_DIR/${1##*/}"
+ 	else
+ 		echo $1
+ 	fi
+ }
+ 
+ get_basename() {
+-	local FILE="`echo $1 | sed 's|^.*://.*/||g'`"
++	local FILE="`sed 's|^.*://.*/||g' <<< $1`"
+ 	echo $FILE
+ }
+ 
+@@ -68,7 +68,7 @@
+ 	elif [ ! "$release" ]; then
+ 		error "Variable 'release' not specified in $PKGMK_PKGFILE."
+ 		exit $E_PKGFILE
+-	elif [ "`type -t build`" != "function" ]; then
++	elif ! typeset -f build &> /dev/null; then
+ 		error "Function 'build' not specified in $PKGMK_PKGFILE."
+ 		exit $E_PKGFILE
+ 	fi
+@@ -117,7 +117,7 @@
+ 
+ 	BASENAME=`get_basename $1`
+ 	for REPO in ${PKGMK_SOURCE_MIRRORS[@]}; do
+-		REPO="`echo $REPO | sed 's|/$||'`"
++		REPO="`sed 's|/$||' <<< $REPO`"
+ 		wget $RESUME_CMD $DOWNLOAD_OPTS $PKGMK_WGET_OPTS $REPO/$BASENAME
+ 		error=$?
+ 		if [ $error == 0 ]; then
+@@ -138,12 +138,12 @@
+ 			fi
+ 		done
+ 	fi
+-	
++
+ 	if [ $error != 0 ]; then
+ 		error "Downloading '$1' failed."
+ 		exit $E_DOWNLOAD
+ 	fi
+-	
++
+ 	mv -f "$LOCAL_FILENAME_PARTIAL" "$LOCAL_FILENAME"
+ }
+ 
+@@ -170,7 +170,7 @@
+ 
+ unpack_source() {
+ 	local FILE LOCAL_FILENAME COMMAND
+-	
++
+ 	for FILE in ${source[@]}; do
+ 		LOCAL_FILENAME=`get_filename $FILE`
+ 		case $LOCAL_FILENAME in
+@@ -196,12 +196,12 @@
+ 
+ make_md5sum() {
+ 	local FILE LOCAL_FILENAMES
+-	
++
+ 	if [ "$source" ]; then
+ 		for FILE in ${source[@]}; do
+ 			LOCAL_FILENAMES="$LOCAL_FILENAMES `get_filename $FILE`"
+ 		done
+-		
++
+ 		md5sum $LOCAL_FILENAMES | sed -e 's|  .*/|  |' | sort -k 2
+ 	fi
+ }
+@@ -216,7 +216,7 @@
+ 	local FILE="$PKGMK_WORK_DIR/.tmp"
+ 
+ 	cd $PKGMK_ROOT
+-	
++
+ 	if [ -f $PKGMK_MD5SUM ]; then
+ 		make_md5sum > $FILE.md5sum
+ 		sort -k 2 $PKGMK_MD5SUM > $FILE.md5sum.orig
+@@ -250,7 +250,7 @@
+ 			info "Md5sum not found."
+ 			exit $E_MD5
+ 		fi
+-		
++
+ 		warning "Md5sum not found, creating new."
+ 		make_md5sum > $PKGMK_MD5SUM
+ 	fi
+@@ -266,9 +266,9 @@
+ 
+ strip_files() {
+ 	local FILE FILTER
+-	
++
+ 	cd $PKG
+-	
++
+ 	if [ -f $PKGMK_ROOT/$PKGMK_NOSTRIP ]; then
+ 		FILTER="grep -v -f $PKGMK_ROOT/$PKGMK_NOSTRIP"
+ 	else
+@@ -293,20 +293,20 @@
+ 	local FILE DIR TARGET
+ 
+ 	cd $PKG
+-	
++
+ 	find . -type f -path "*/man/man*/*" | while read FILE; do
+ 		if [ "$FILE" = "${FILE%%.gz}" ]; then
+ 			gzip -9 "$FILE"
+ 		fi
+ 	done
+-	
++
+ 	find . -type l -path "*/man/man*/*" | while read FILE; do
+ 		TARGET=`readlink -n "$FILE"`
+ 		TARGET="${TARGET##*/}"
+ 		TARGET="${TARGET%%.gz}.gz"
+ 		rm -f "$FILE"
+ 		FILE="${FILE%%.gz}.gz"
+-		DIR=`dirname "$FILE"`
++		DIR="${FILE%/*}"
+ 
+ 		if [ -e "$DIR/$TARGET" ]; then
+ 			ln -sf "$TARGET" "$FILE"
+@@ -316,9 +316,9 @@
+ 
+ check_footprint() {
+ 	local FILE="$PKGMK_WORK_DIR/.tmp"
+-	
++
+ 	cd $PKGMK_ROOT
+-	
++
+ 	if [ -f $TARGET ]; then
+ 		make_footprint > $FILE.footprint
+ 		if [ -f $PKGMK_FOOTPRINT ]; then
+@@ -353,7 +353,7 @@
+ 	export PKG="$PKGMK_WORK_DIR/pkg"
+ 	export SRC="$PKGMK_WORK_DIR/src"
+ 	umask 022
+-	
++
+ 	cd $PKGMK_ROOT
+ 	remove_work_dir
+ 	mkdir -p $SRC $PKG
+@@ -371,28 +371,28 @@
+ build_package() {
+ 	local BUILD_SUCCESSFUL="no"
+ 	local COMPRESSION
+-	
++
+ 	check_file "$TARGET"
+ 	make_work_dir
+ 
+-	if [ "$UID" != "0" ]; then
++	if [ $(id -u) -ne 0 ]; then
+ 		warning "Packages should be built as root."
+ 	fi
+-	
++
+ 	info "Building '$TARGET'."
+-	
++
+ 	unpack_source
+-	
++
+ 	cd $SRC
+ 	(set -e -x ; build)
+-	
++
+ 	if [ $? = 0 ]; then
+ 		if [ "$PKGMK_NO_STRIP" = "no" ]; then
+ 			strip_files
+ 		fi
+-		
++
+ 		compress_manpages
+-		
++
+ 		cd $PKG
+ 		info "Build result:"
+ 
+@@ -413,11 +413,11 @@
+ 			fi
+ 		fi
+ 	fi
+-	
++
+ 	if [ "$PKGMK_KEEP_WORK" = "no" ]; then
+ 		remove_work_dir
+ 	fi
+-	
++
+ 	if [ "$BUILD_SUCCESSFUL" = "yes" ]; then
+ 		info "Building '$TARGET' succeeded."
+ 	else
+@@ -431,19 +431,19 @@
+ 
+ install_package() {
+ 	local COMMAND
+-	
++
+ 	info "Installing '$TARGET'."
+-	
++
+ 	if [ "$PKGMK_INSTALL" = "install" ]; then
+ 		COMMAND="pkgadd $TARGET"
+ 	else
+ 		COMMAND="pkgadd -u $TARGET"
+ 	fi
+-	
++
+ 	cd $PKGMK_ROOT
+ 	echo "$COMMAND"
+ 	$COMMAND
+-	
++
+ 	if [ $? = 0 ]; then
+ 		info "Installing '$TARGET' succeeded."
+ 	else
+@@ -454,11 +454,11 @@
+ 
+ recursive() {
+ 	local ARGS FILE DIR
+-	
+-	ARGS=`echo "$@" | sed -e "s/--recursive//g" -e "s/-r//g"`
+-	
++
++	ARGS=`sed -e "s/--recursive//g" -e "s/-r//g" <<< "$@"`
++
+ 	for FILE in `find $PKGMK_ROOT -name $PKGMK_PKGFILE | sort`; do
+-		DIR="`dirname $FILE`/"
++		DIR="${FILE%/*}/"
+ 		if [ -d $DIR ]; then
+ 			info "Entering directory '$DIR'."
+ 			(cd $DIR && $PKGMK_COMMAND $ARGS)
+@@ -469,12 +469,12 @@
+ 
+ clean() {
+ 	local FILE LOCAL_FILENAME
+-	
++
+ 	if [ -f $TARGET ]; then
+ 		info "Removing $TARGET"
+ 		rm -f $TARGET
+ 	fi
+-	
++
+ 	for FILE in ${source[@]}; do
+ 		LOCAL_FILENAME=`get_filename $FILE`
+ 		if [ -e $LOCAL_FILENAME ] && [ "$LOCAL_FILENAME" != "$FILE" ]; then
+@@ -489,17 +489,17 @@
+ 		error "Unable to update footprint. File '$TARGET' not found."
+ 		exit 1
+ 	fi
+-	
++
+ 	check_file "$PKGMK_FOOTPRINT"
+ 	make_footprint > $PKGMK_FOOTPRINT
+ 	touch $TARGET
+-	
++
+ 	info "Footprint updated."
+ }
+ 
+ build_needed() {
+ 	local FILE RESULT
+-	
++
+ 	RESULT="yes"
+ 	if [ -f $TARGET ]; then
+ 		RESULT="no"
+@@ -511,23 +511,23 @@
+ 			fi
+ 		done
+ 	fi
+-	
++
+ 	echo $RESULT
+ }
+ 
+ interrupted() {
+ 	echo ""
+ 	error "Interrupted."
+-	
++
+ 	if [ "$PKGMK_KEEP_WORK" = "no" ]; then
+ 		rm -rf $PKGMK_WORK_DIR
+ 	fi
+-	
++
+ 	exit 1
+ }
+ 
+ print_help() {
+-	echo "usage: `basename $PKGMK_COMMAND` [options]"
++	echo "usage: ${PKGMK_COMMAND##*/} [options]"
+ 	echo "options:"
+ 	echo "  -i,   --install             build and install package"
+ 	echo "  -u,   --upgrade             build and install package (as upgrade)"
+@@ -591,19 +591,19 @@
+ 				PKGMK_KEEP_WORK="yes" ;;
+ 			-cf|--config-file)
+ 				if [ ! "$2" ]; then
+-					echo "`basename $PKGMK_COMMAND`: option $1 requires an argument"
++					echo "${PKGMK_COMMAND##*/}: option $1 requires an argument"
+ 					exit 1
+ 				fi
+ 				PKGMK_CONFFILE="$2"
+ 				shift ;;
+ 			-v|--version)
+-				echo "`basename $PKGMK_COMMAND` (pkgutils) $PKGMK_VERSION"
++				echo "${PKGMK_COMMAND##*/} (pkgutils) $PKGMK_VERSION"
+ 				exit 0 ;;
+ 			-h|--help)
+ 				print_help
+ 				exit 0 ;;
+ 			*)
+-				echo "`basename $PKGMK_COMMAND`: invalid option $1"
++				echo "${PKGMK_COMMAND##*/}: invalid option $1"
+ 				exit 1 ;;
+ 		esac
+ 		shift
+@@ -618,26 +618,26 @@
+ 	fi
+ 
+ 	local FILE TARGET
+-	
++
+ 	parse_options "$@"
+-	
++
+ 	if [ "$PKGMK_RECURSIVE" = "yes" ]; then
+ 		recursive "$@"
+ 		exit 0
+ 	fi
+-	
+-	for FILE in $PKGMK_PKGFILE $PKGMK_CONFFILE; do
++
++	for FILE in $PKGMK_ROOT/$PKGMK_PKGFILE $PKGMK_CONFFILE; do
+ 		if [ ! -f $FILE ]; then
+ 			error "File '$FILE' not found."
+ 			exit 1
+ 		fi
+ 		. $FILE
+ 	done
+-	
++
+ 	check_directory "$PKGMK_SOURCE_DIR"
+ 	check_directory "$PKGMK_PACKAGE_DIR"
+-	check_directory "`dirname $PKGMK_WORK_DIR`"
+-	
++	check_directory "${PKGMK_WORK_DIR%/*}"
++
+ 	check_pkgfile
+ 
+ 	case $PKGMK_COMPRESSION_MODE in
+@@ -654,12 +654,12 @@
+ 		clean
+ 		exit 0
+ 	fi
+-	
++
+ 	if [ "$PKGMK_UPDATE_FOOTPRINT" = "yes" ]; then
+ 		update_footprint
+ 		exit 0
+ 	fi
+-	
++
+ 	if [ "$PKGMK_UPDATE_MD5SUM" = "yes" ]; then
+ 		download_source
+ 		check_file "$PKGMK_MD5SUM"
+@@ -667,12 +667,12 @@
+ 		info "Md5sum updated."
+ 		exit 0
+ 	fi
+-	
++
+ 	if [ "$PKGMK_DOWNLOAD_ONLY" = "yes" ]; then
+ 		download_source
+ 		exit 0
+ 	fi
+-	
++
+ 	if [ "$PKGMK_EXTRACT_ONLY" = "yes" ]; then
+ 		download_source
+ 		make_work_dir
+@@ -680,7 +680,7 @@
+ 		unpack_source
+ 		exit 0
+ 	fi
+-	
++
+ 	if [ "$PKGMK_UP_TO_DATE" = "yes" ]; then
+ 		if [ "`build_needed`" = "yes" ]; then
+ 			info "Package '$TARGET' is not up to date."
+@@ -689,18 +689,18 @@
+ 		fi
+ 		exit 0
+ 	fi
+-	
++
+ 	if [ "`build_needed`" = "no" ] && [ "$PKGMK_FORCE" = "no" ] && [ "$PKGMK_CHECK_MD5SUM" = "no" ]; then
+ 		info "Package '$TARGET' is up to date."
+ 	else
+ 		download_source
+ 		build_package
+ 	fi
+-	
++
+ 	if [ "$PKGMK_INSTALL" != "no" ]; then
+ 		install_package
+ 	fi
+-	
++
+ 	exit 0
+ }
+ 
+diff -Naur a/rejmerge.in b/rejmerge.in
+--- a/rejmerge.in	2014-03-23 22:15:46.000000000 +0400
++++ b/rejmerge.in	2015-02-06 07:36:55.712207524 +0300
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ #
+ #  rejmerge (pkgutils)
+ # 
+@@ -237,7 +237,7 @@
+ main() {
+ 	parse_options "$@"
+ 
+-	if [ "$UID" != "0" ]; then
++	if [ $(id -u) -ne 0 ]; then
+ 		echo "$REJMERGE_COMMAND: only root can merge rejected files"
+ 		exit 1
+ 	fi

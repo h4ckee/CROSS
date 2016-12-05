@@ -1,0 +1,30 @@
+#
+# /etc/inittab: system runlevel description
+#
+
+# Runlevels:
+#  0	Halt
+#  1(S)	Single-user
+#  2	Multi-user
+#  34	Not used
+#  5	Xorg
+#  6	Reboot
+
+id:2:initdefault:
+
+rc::sysinit:/etc/rc.d/rc
+rs:S1:wait:/etc/rc.d/rc.single
+rm:2:wait:/etc/rc.d/rc.multi
+rd:06:wait:/etc/rc.d/rc.shutdown
+su:S:wait:/sbin/sulogin -p
+
+c1:2:respawn:/sbin/agetty -8 -s --noclear 38400 tty1 linux
+c2:2:respawn:/sbin/agetty -8 -s -p 38400 tty2 linux
+c3:2:respawn:/sbin/agetty -8 -s -p 38400 tty3 linux
+c4:2:respawn:/sbin/agetty -8 -s -p 38400 tty4 linux
+
+ca::ctrlaltdel:/sbin/shutdown -r now
+pf::powerfail:/sbin/shutdown -f -h +1 'Power failure, system shutting down'
+pr:12:powerokwait:/sbin/shutdown -c 'Power restored, shutdown cancelled'
+
+# End of file

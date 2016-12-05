@@ -1,0 +1,26 @@
+# Description: Fast DNS library supporting recent RFCs
+# URL:         http://www.nlnetlabs.nl/projects/ldns
+# Depends on:  libressl
+
+name=ldns
+version=1.6.17
+release=1
+source=(http://www.nlnetlabs.nl/downloads/$name/$name-$version.tar.gz)
+
+build() {
+	cd $name-$version
+
+	./configure \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/man \
+		--localstatedir=/var \
+		--disable-ldns-config \
+		--disable-static \
+		--disable-shared \
+		--with-drill
+
+	make
+	make DESTDIR=$PKG install
+	rm -rf $PKG/usr/{include,lib,man/man3}
+}

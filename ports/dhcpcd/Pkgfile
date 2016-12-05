@@ -1,0 +1,26 @@
+# Description: An RFC2131-compliant DHCP client daemon
+# URL:         http://roy.marples.name/projects/dhcpcd/
+# Depends on:  eudev
+
+name=dhcpcd
+version=6.9.3
+release=1
+source=(http://roy.marples.name/downloads/dhcpcd/$name-$version.tar.xz)
+
+build() {
+	cd $name-$version
+
+	./configure --prefix= \
+		--libexecdir=/lib/dhcpcd \
+		--dbdir=/var/lib/dhcpcd \
+		--mandir=/usr/man \
+		--sysconfdir=/etc/dhcpcd \
+		--os=linux \
+		--with-hooks=none
+
+	make
+	make DESTDIR=$PKG install
+	chmod -R u+w $PKG
+
+	echo -e "\nbackground\nipv4only\nnoarp\nnoipv4ll\nquiet" >> $PKG/etc/dhcpcd/dhcpcd.conf
+}

@@ -1,0 +1,18 @@
+#
+# /etc/fstab: static file system information
+#
+#<fs>		<dir>		<type>		<options>				<dump>	<pass>
+
+LABEL=root	/		ext4		defaults,nobarrier			0	1
+#LABEL=var	/var		ext4		defaults,nobarrier,data=writeback	0	2
+#LABEL=home	/home		ext4		defaults,nobarrier,data=writeback	0	2
+#LABEL=swap	swap		swap		defaults				0	0
+#/dev/cdrom	/mnt/cdrom	iso9660		noauto,user,ro,utf8,unhide,mode=0644	0	0
+#/dev/sdb1	/mnt/usb	vfat		noauto,user,iocharset=utf8,fmask=133	0	0
+devpts		/dev/pts	devpts		nosuid,noexec,gid=tty,mode=0620		0	0
+tmpfs		/tmp		tmpfs		nosuid,nodev				0	0
+tmpfs		/run		tmpfs		nosuid,noexec,nodev,noauto,mode=0755	0	0
+proc		/proc		proc		nosuid,noexec,nodev,noauto		0	0
+sysfs		/sys		sysfs		nosuid,noexec,nodev,noauto		0	0
+
+# End of file

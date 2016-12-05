@@ -1,0 +1,37 @@
+# Description: Collection of boot loaders for the Linux operating system
+# URL: http://syslinux.zytor.com/
+# Depends on: perl
+
+name=syslinux
+version=6.03
+release=1
+source=(http://www.kernel.org/pub/linux/utils/boot/$name/$name-$version.tar.xz $name.cfg splash.png ter8x14.psf)
+
+build() {
+	cd $name-$version
+
+	sed -i	-e 's|diag libinstaller dos win32 win64 dosutil txt|libinstaller txt|g' \
+		-e 's|win32/syslinux.exe win64/syslinux64.exe||g' \
+		-e 's|dosutil/*.com dosutil/*.sys||g' \
+		-e 's|dos/syslinux.com||g' \
+		-e 's|INSTALLSUBDIRS = com32 utils dosutil|INSTALLSUBDIRS = com32 utils|g' \
+		-e '/install -m 644 -c $(INSTALL_DIAG) $(INSTALLROOT)$(DIAGDIR)/s||#&|' Makefile
+
+	make OPTFLAGS="$CFLAGS" installer
+
+	install -d -m 755 $PKG/{boot/$name,usr/{{,s}bin,man/man1}}
+	install -D -m 644 -o root -g root $SRC/{$name.cfg,splash.png,ter8x14.psf}	$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/com32/chain/chain.c32			$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/com32/menu/vesamenu.c32			$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/com32/lib/libcom32.c32			$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/com32/libutil/libutil.c32		$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/com32/elflink/ldlinux/ldlinux.c32	$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/mbr/isohdpfx.bin				$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/mbr/mbr.bin				$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/core/isolinux.bin			$PKG/boot/$name
+	install -D -m 644 -o root -g root bios/core/ldlinux.{bin,sys}			$PKG/boot/$name
+	install -D -m 755 -o root -g root bios/extlinux/extlinux			$PKG/usr/sbin
+	install -D -m 755 -o root -g root bios/linux/syslinux				$PKG/usr/sbin
+	install -D -m 755 -o root -g root bios/utils/isohybrid				$PKG/usr/bin
+	install -D -m 644 -o root -g root man/{ext,sys}linux.1				$PKG/usr/man/man1
+}

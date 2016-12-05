@@ -1,0 +1,17 @@
+# Description: BSD-like initscripts
+# Depends on:  glibc grep coreutils mksh ncurses kbd findutils sysvinit
+
+name=initscripts
+version=2015.02
+release=1
+source=(inittab firewall rc rc.local rc.multi rc.single rc.shutdown rc.conf)
+
+build() {
+	mkdir -p $PKG/etc/rc.d $PKG/var/log $PKG/var/lib/urandom
+
+	install -m 0755 firewall rc rc.{local,multi,single,shutdown} $PKG/etc/rc.d
+	install -m 0644 inittab rc.conf $PKG/etc
+
+	touch $PKG/var/log/boot $PKG/var/lib/urandom/seed
+	chmod 0640 $PKG/var/log/boot $PKG/var/lib/urandom/seed
+}

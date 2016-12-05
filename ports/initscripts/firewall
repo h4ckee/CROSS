@@ -1,0 +1,145 @@
+#!/bin/sh
+#
+# /etc/rc.d/firewall: start/stop firewall
+#
+
+FW='/usr/sbin/iptables'
+FWS='/usr/sbin/iptables-save'
+FWR='/usr/sbin/iptables-restore'
+
+start() {
+if [ ! -f /etc/${0##*/}.start ]; then
+	for TABLE in $(< /proc/net/ip_tables_names); do
+		$FW -t $TABLE -F
+		$FW -t $TABLE -X
+		$FW -t $TABLE -Z
+		case $TABLE in
+		filter)
+			$FW -t $TABLE -P INPUT DROP
+			$FW -t $TABLE -P FORWARD DROP
+			$FW -t $TABLE -P OUTPUT ACCEPT
+			;;
+		mangle)
+			$FW -t $TABLE -P PREROUTING ACCEPT
+			$FW -t $TABLE -P INPUT ACCEPT
+			$FW -t $TABLE -P FORWARD DROP
+			$FW -t $TABLE -P OUTPUT ACCEPT
+			$FW -t $TABLE -P POSTROUTING ACCEPT
+			;;
+		nat)
+			$FW -t $TABLE -P PREROUTING DROP
+			$FW -t $TABLE -P OUTPUT DROP
+			$FW -t $TABLE -P POSTROUTING DROP
+			;;
+		esac
+	done
+	$FW -A INPUT -i lo -j ACCEPT
+#	$FW -t filter -A INPUT -m state --state INVALID -m limit --limit 20/m --limit-burst 50 -j LOG --log-prefix "INVALID STATE:"
+	$FW -t filter -A INPUT -m state --state INVALID -j DROP
+#	$FW -t filter -A INPUT -m addrtype --limit-iface-in --dst-type UNSPEC,BROADCAST,ANYCAST,MULTICAST,PROHIBIT -m limit --limit 20/m --limit-burst 50 -j LOG --log-prefix "BADADDR STATE:"
+	$FW -t filter -A INPUT -m addrtype --limit-iface-in --dst-type UNSPEC,BROADCAST,ANYCAST,MULTICAST,PROHIBIT -j DROP
+	$FW -t filter -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+	$FW -t mangle -A POSTROUTING -p TCP --dport 20 -j TOS --set-tos 8
+	$FW -t mangle -A POSTROUTING -j TOS --set-tos 16
+	$FWS > /etc/${0##*/}.start && chmod 600 /etc/${0##*/}.start
+else
+	$FWR < /etc/${0##*/}.start &> /dev/null
+fi
+}
+
+stop() {
+if [ ! -f /etc/${0##*/}.stop ]; then
+	for TABLE in $(< /proc/net/ip_tables_names); do
+		$FW -t $TABLE -F
+		$FW -t $TABLE -X
+		$FW -t $TABLE -Z
+		case $TABLE in
+		filter)
+			for CHAIN in INPUT FORWARD OUTPUT; do
+				$FW -t $TABLE -P $CHAIN ACCEPT
+			done
+			;;
+		mangle)
+			for CHAIN in PREROUTING INPUT FORWARD OUTPUT POSTROUTING; do
+				$FW -t $TABLE -P $CHAIN ACCEPT
+			done
+			;;
+		nat)
+			for CHAIN in PREROUTING OUTPUT POSTROUTING; do
+				$FW -t $TABLE -P $CHAIN ACCEPT
+			done
+			;;
+		raw)
+			for CHAIN in PREROUTING OUTPUT; do
+				$FW -t $TABLE -P $CHAIN ACCEPT
+			done
+			;;
+		esac
+	done
+	$FWS > /etc/${0##*/}.stop && chmod 600 /etc/${0##*/}.stop
+else
+	$FWR < /etc/${0##*/}.stop
+fi
+}
+
+restart() {
+	rm -f /etc/${0##*/}.st{art,op}
+	stop
+	sleep 1
+	start
+}
+
+block() {
+	for TABLE in $(< /proc/net/ip_tables_names); do
+		$FW -t $TABLE -F
+		$FW -t $TABLE -X
+		$FW -t $TABLE -Z
+		case $TABLE in
+		filter)
+			for CHAIN in INPUT FORWARD OUTPUT; do
+				$FW -t $TABLE -P $CHAIN DROP
+			done
+			;;
+		mangle)
+			for CHAIN in PREROUTING INPUT FORWARD OUTPUT POSTROUTING; do
+				$FW -t $TABLE -P $CHAIN DROP
+			done
+			;;
+		nat)
+			for CHAIN in PREROUTING OUTPUT POSTROUTING; do
+				$FW -t $TABLE -P $CHAIN DROP
+			done
+			;;
+		raw)
+			for CHAIN in PREROUTING OUTPUT; do
+				$FW -t $TABLE -P $CHAIN DROP
+			done
+			;;
+		esac
+	done
+	$FW -A INPUT -i lo -j ACCEPT
+	$FW -A OUTPUT -o lo -j ACCEPT
+}
+
+status() {
+	for TABLE in $(< /proc/net/ip_tables_names); do
+		echo -e "\n${TABLE} table:"
+		$FW -L -v -n -t $TABLE --line-numbers
+	done
+}
+
+usage() {
+	echo "usage: $0 [start|stop|restart|block|status]"
+	exit 1
+}
+
+case $1 in
+	start)		start ;;
+	stop)		stop ;;
+	restart)	restart ;;
+	block)		block ;;
+	status)		status ;;
+	*)		usage ;;
+esac
+
+# End of file

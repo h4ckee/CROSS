@@ -1,0 +1,11 @@
+#
+# /etc/securetty: defines which devices root can log in on
+#
+
+console
+tty1
+tty2
+tty3
+tty4
+
+# End of file

@@ -1,0 +1,18 @@
+drwxr-xr-x	0/0	etc/
+drwxr-xr-x	0/0	etc/ports/
+drwxr-xr-x	0/0	etc/ports/drivers/
+-rwxr-xr-x	0/0	etc/ports/drivers/rsync
+drwxr-xr-x	0/0	etc/rc.d/
+-rwxr-xr-x	0/0	etc/rc.d/rsyncd
+-rw-r--r--	0/0	etc/rsyncd.conf
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+-rwxr-xr-x	0/0	usr/bin/rsync
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man1/
+-rw-r--r--	0/0	usr/man/man1/rsync.1.gz
+drwxr-xr-x	0/0	usr/man/man5/
+-rw-r--r--	0/0	usr/man/man5/rsyncd.conf.5.gz
+drwxr-xr-x	0/0	var/
+drwxr-xr-x	0/0	var/log/
+-rw-r--r--	0/0	var/log/rsyncd.log (EMPTY)

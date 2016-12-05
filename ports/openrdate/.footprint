@@ -1,0 +1,10 @@
+drwxr-xr-x	0/0	etc/
+drwxr-xr-x	0/0	etc/cron/
+drwxr-xr-x	0/0	etc/cron/daily/
+-rwxr-xr-x	0/0	etc/cron/daily/rdate
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+-rwxr-xr-x	0/0	usr/bin/rdate
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man8/
+-rw-r--r--	0/0	usr/man/man8/rdate.8.gz

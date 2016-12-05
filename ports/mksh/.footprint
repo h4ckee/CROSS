@@ -1,0 +1,11 @@
+drwxr-xr-x	0/0	bin/
+-rwxr-xr-x	0/0	bin/mksh
+lrwxrwxrwx	0/0	bin/sh -> mksh
+drwxr-xr-x	0/0	etc/
+-rw-r--r--	0/0	etc/profile
+drwxr-xr-x	0/0	etc/skel/
+-rw-r--r--	0/0	etc/skel/.shrc
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man1/
+-rw-r--r--	0/0	usr/man/man1/mksh.1.gz

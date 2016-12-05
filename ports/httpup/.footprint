@@ -1,0 +1,12 @@
+drwxr-xr-x	0/0	etc/
+drwxr-xr-x	0/0	etc/ports/
+drwxr-xr-x	0/0	etc/ports/drivers/
+-rwxr-xr-x	0/0	etc/ports/drivers/httpup
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+-rwxr-xr-x	0/0	usr/bin/httpup
+-rwxr-xr-x	0/0	usr/bin/httpup-repgen
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man8/
+-rw-r--r--	0/0	usr/man/man8/httpup-repgen.8.gz
+-rw-r--r--	0/0	usr/man/man8/httpup.8.gz

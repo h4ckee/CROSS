@@ -1,0 +1,21 @@
+# Description: The man page suite from OpenBSD
+# URL:         https://github.com/voidlinux/openbsd-man
+
+name=openbsd-man
+version=281214
+release=1
+source=(https://github.com/voidlinux/openbsd-man/archive/master.zip)
+
+build() {
+	cd $name-master
+	sed -i '/^CFLAGS/s: -Werror::' Makefile
+	sed -i	-e 's:/{share,local/share}::g' \
+		-e 's:/local/share::g' \
+		-e 's:/share::g' \
+		-e 's:/usr/bin/zcat:/bin/zcat:g' \
+		man.conf
+	sed -i '/_PATH_PAGER/s:/usr::' pathnames.h
+	sed -i 's:/usr/bin/more:/bin/more:' man.1
+	make
+	make PREFIX=/usr ETCDIR=/etc MANDIR=/usr/man DESTDIR=$PKG install
+}

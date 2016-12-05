@@ -1,0 +1,11 @@
+3c0fbef02cba072ec5d3f5636e7ac9cb  .config
+1c7c2d0338939a9e6953a64d80861471  0001-block-cgroups-kconfig-build-bits-for-BFQ-v7r7-3.18.patch
+a81346cce95baeac2c56cf60d3c7e5b6  0002-block-introduce-the-BFQ-v7r7-I-O-sched-for-3.18.patch
+8f2743651280f5a022e541f4e95e5546  0003-block-bfq-add-Early-Queue-Merge-EQM-to-BFQ-v7r7-for-3.18.0.patch
+5fcca6b4aea2dd753b7df29c43026c56  3.18-sched-bfs-460.patch
+deb5994185ebb1ba2a012ab4cdcc11a5  console-loglevel.patch
+c66b20f9d5ac307ccae24989c5719fef  iwlwifi-6000g2a-5.ucode
+4b47db024c8a0cba872c3e98e907a378  iwlwifi-6000g2a-6.ucode
+9e854df51ca3fef8bfe566dbd7b89241  linux-3.18.tar.xz
+0d4f5406f6fbe34a53e1c5e1d2037e8b  patch-3.18.3.xz
+3ed0ae6b46117486724854015f47ef2d  patch-fonts.xz

@@ -1,0 +1,71 @@
+# Description: GNU C library
+# URL:         http://www.gnu.org/software/libc
+# Depends on:  base kernel tzdata
+
+name=glibc
+version=2.21
+release=1
+source=(http://ftp.gnu.org/gnu/$name/$name-$version.tar.xz ld.so.conf \
+	$name-$version-roundup.patch)
+
+build() {
+	cd $name-$version
+	for patch in $SRC/*.patch; do
+		patch -p1 < $patch
+	done
+
+	sed -ir	-e '/#define._PATH_MAN/s|/usr/share/man|/usr/man|' \
+		-e '/#define._PATH_DEVDB/s|/var/run/dev.db|/run/dev.db|' \
+		-e '/#define._PATH_UTMP/s|/var/run/utmp|/run/utmp|' \
+		-e '/#define._PATH_VARRUN/s|/var/run/|/run/|' sysdeps/unix/sysv/linux/paths.h
+	sed -ir 's|/lib64|/lib|' sysdeps/unix/sysv/linux/configure
+	sed -ir 's|/lib64|/lib|' sysdeps/unix/sysv/linux/x86_64/ldconfig.h
+	sed -ir 's|/lib64|/lib|' sysdeps/unix/sysv/linux/x86_64/dl-cache.h
+	sed -ir 's|/lib64|/lib|' sysdeps/gnu/configure
+	sed -ir '/^all-subdirs/,+6s/manual//' Makeconfig
+
+	mkdir $SRC/build
+	cd $SRC/build
+	echo "slibdir=/lib" >> configparms
+	$SRC/$name-$version/configure \
+		--prefix=/usr \
+		--libexecdir=/usr/lib \
+		--libdir=/usr/lib \
+		--with-headers=/usr/include \
+		--enable-obsolete-rpc \
+		--enable-kernel=3.15.0 \
+		--enable-add-ons \
+		--enable-bind-now \
+		--enable-stackguard-randomization \
+		--enable-lock-elision \
+		--disable-build-nscd \
+		--disable-nscd \
+		--disable-multi-arch \
+		--disable-profile \
+		--disable-werror \
+		--without-gd
+
+	make
+	make install_root=$PKG install
+
+	rm -rf	$PKG/sbin/sln \
+		$PKG/usr/bin/{catchsegv,pcprofiledump,pldd,sotruss,sprof,xtrace,tzselect} \
+		$PKG/usr/sbin/z{dump,ic} \
+		$PKG/usr/lib/{audit,*_g.a} \
+		$PKG/usr/share/locale \
+		$PKG/lib64
+
+	rm $PKG/usr/lib/lib{anl,BrokenLocale,nsl,resolv,rt,util}.a
+
+	sed -i	-e '1s|#!.*|#!/bin/sh|' \
+		-e 's|/lib64|/lib|' \
+	$PKG/usr/bin/ldd
+
+	install -d -m 755 $PKG/etc/{ld.so.conf,profile}.d
+	install -d -m 755 $PKG/usr/lib/locale
+	install -m 644 $SRC/ld.so.conf $PKG/etc/ld.so.conf
+
+	touch $PKG/etc/profile.d/locale.sh
+	touch $PKG/etc/ld.so.cache
+	ln -s /usr/lib/locale $PKG/usr/share/locale
+}

@@ -1,0 +1,41 @@
+#
+# /etc/profile - Bourne Shell startup script for login shells
+#
+
+if [ $(id -u) -eq 0 ]; then
+	export PS1=$'\1\r\1\e[0;31m\1#\1\e[0m\1 '
+else
+	export PS1=$'\1\r\1\e[0;32m\1$\1\e[0m\1 '
+fi
+export PS2=$'\1\r\1\e[1;37m\]\1>\1\e[0m\1 '
+export PATH='/sbin:/bin:/usr/sbin:/usr/bin'
+export CDPATH='.:~:/var/ports:/var/ports/cross:/var/ports/core:/var/ports/opt:/var/ports/xorg:/var/ports/contrib:/var/cache:/mnt'
+export HISTSIZE=2047
+export HISTFILE=~/.history
+export LESS='-Rgimqc'
+export LESSEDIT='%E ?lt+%lt. %f'
+export LESSOPEN='|/usr/lib/less/filter %s'
+export LESS_TERMCAP_mb=$'\e[01;37m'
+export LESS_TERMCAP_md=$'\e[01;34m'
+export LESS_TERMCAP_me=$'\e[0m'
+export LESS_TERMCAP_se=$'\e[0m'
+export LESS_TERMCAP_so=$'\e[01;30m'
+export LESS_TERMCAP_ue=$'\e[0m'
+export LESS_TERMCAP_us=$'\e[00;37m'
+export GREP_COLOR='0;31'
+export EDITOR='vi'
+export PAGER='less'
+export LS_OPTIONS='-h -A -N --color=auto --group-directories-first'
+export ENV="$HOME/.shrc"
+
+if [ ! -f ~/.inputrc ]; then
+	export INPUTRC='/etc/inputrc'
+fi
+
+for PROFILE in /etc/profile.d/*.sh; do
+	source $PROFILE
+done
+
+eval $(dircolors /etc/dircolors)
+
+# End of file

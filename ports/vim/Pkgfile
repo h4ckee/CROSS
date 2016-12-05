@@ -1,0 +1,45 @@
+# Description: Highly configurable text editor
+# URL:         http://www.vim.org/
+# Depends on:  ncurses
+
+name=vim
+version=7.4.764
+release=1
+source=(ftp://ftp.vim.org/pub/$name/unix/$name-${version%.*}.tar.bz2 vimrc \
+	http://dev.gentoo.org/~radhermit/$name/$name-$version.patch.xz)
+
+build() {
+	cd ${name}74/src
+
+	bzcat $SRC/$name-patches-$version.patch.bz2 | patch -p1 -d ..
+
+	sed -i	-e 's|^.*\(#define SYS_.*VIMRC_FILE.*"\) .*$|\1|' \
+		-e 's|^.*\(#define VIMRC_FILE.*"\) .*$|\1|' feature.h
+
+	./configure --prefix=/usr \
+		--mandir=/usr/man \
+		--enable-multibyte \
+		--disable-xim \
+		--disable-acl \
+		--disable-gui \
+		--disable-gpm \
+		--disable-nls \
+		--without-x \
+		--with-vim-name=vim \
+		--with-compiledby=CROSS \
+		--with-features=tiny
+
+	make VIMRTDIR=
+	make VIMRTDIR= VIMRCLOC=/etc DESTDIR=$PKG installvimbin installruntime installlinks
+
+	rm -rf	$PKG/usr/share \
+		$PKG/usr/man/man?/{evim,vimtutor,vimdiff}*
+
+	install -D -m 644 $SRC/vimrc $PKG/etc/vimrc
+	ln -sf vim $PKG/usr/bin/vi
+	ln -sf vim.1.gz $PKG/usr/man/man1/ex.1.gz
+	ln -sf vim.1.gz $PKG/usr/man/man1/vi.1.gz
+	ln -sf vim.1.gz $PKG/usr/man/man1/rvim.1.gz
+	ln -sf vim.1.gz $PKG/usr/man/man1/view.1.gz
+	ln -sf vim.1.gz $PKG/usr/man/man1/rview.1.gz
+}

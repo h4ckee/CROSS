@@ -1,0 +1,66 @@
+drwxr-xr-x	0/0	bin/
+drwxr-xr-x	0/0	boot/
+drwxr-xr-x	0/0	dev/
+drwxr-xr-x	0/0	etc/
+drwxr-xr-x	0/0	etc/default/
+-rw-r--r--	0/0	etc/default/useradd
+-rw-r--r--	0/0	etc/dircolors
+-rw-r--r--	0/0	etc/fstab
+-rw-r--r--	0/0	etc/group
+-rw-r--r--	0/0	etc/host.conf
+-rw-r--r--	0/0	etc/hosts
+-rw-r--r--	0/0	etc/issue
+-rw-r--r--	0/0	etc/mime.types
+-rw-r--r--	0/0	etc/motd (EMPTY)
+lrwxrwxrwx	0/0	etc/mtab -> /proc/self/mounts
+-rw-r--r--	0/0	etc/nsswitch.conf
+-rw-r--r--	0/0	etc/passwd
+-rw-r--r--	0/0	etc/resolv.conf
+-rw-r--r--	0/0	etc/securetty
+-rw-r-----	0/0	etc/shadow
+-rw-r--r--	0/0	etc/shells
+-rw-r--r--	0/0	etc/version
+lrwxrwxrwx	0/0	home -> /var/home
+drwxr-xr-x	0/0	lib/
+lrwxrwxrwx	0/0	lib64 -> lib
+drwxr-xr-x	0/0	mnt/
+drwxr-xr-x	0/0	mnt/cdrom/
+drwxr-xr-x	0/0	mnt/floppy/
+drwxr-xr-x	0/0	mnt/loop/
+drwxr-xr-x	0/0	mnt/usb/
+dr-xr-xr-x	0/0	proc/
+drwxr-x---	0/0	root/
+drwxr-xr-x	0/0	run/
+drwxr-xr-x	0/0	sbin/
+dr-xr-xr-x	0/0	sys/
+drwxrwxrwt	0/0	tmp/
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+drwxr-xr-x	0/0	usr/include/
+drwxr-xr-x	0/0	usr/lib/
+lrwxrwxrwx	0/0	usr/lib64 -> lib
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man{1..8}/
+drwxr-xr-x	0/0	usr/sbin/
+drwxr-xr-x	0/0	usr/share/
+drwxr-xr-x	0/0	var/
+drwxr-xr-x	0/0	var/cache/
+drwxr-xr-x	0/0	var/cache/pkg/
+drwxr-xr-x	0/0	var/cache/src/
+drwxr-xr-x	0/0	var/empty/
+drwxr-xr-x	0/0	var/ftp/
+drwxr-xr-x	0/0	var/home/
+drwxr-xr-x	0/0	var/lib/
+drwxr-xr-x	0/0	var/lib/pkg/
+lrwxrwxrwx	0/0	var/lock -> ../tmp
+drwxr-xr-x	0/0	var/log/
+drwxr-xr-x	0/0	var/log/old/
+lrwxrwxrwx	0/0	var/mail -> spool/mail
+drwxr-xr-x	0/0	var/obj/
+drwxr-xr-x	0/0	var/ports/
+lrwxrwxrwx	0/0	var/run -> ../run
+drwxr-xr-x	0/0	var/spool/
+drwxrwxrwt	0/0	var/spool/mail/
+drwxr-xr-x	0/0	var/src/
+drwxrwxrwt	0/0	var/tmp/
+drwxr-xr-x	0/0	var/www/

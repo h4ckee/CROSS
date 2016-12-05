@@ -1,0 +1,37 @@
+drwxr-xr-x	0/0	bin/
+lrwxrwxrwx	0/0	bin/lsmod -> /sbin/kmod
+drwxr-xr-x	0/0	etc/
+drwxr-xr-x	0/0	etc/depmod.d/
+drwxr-xr-x	0/0	etc/modprobe.d/
+drwxr-xr-x	0/0	lib/
+lrwxrwxrwx	0/0	lib/libkmod.so.2 -> libkmod.so.2.2.11
+-rwxr-xr-x	0/0	lib/libkmod.so.2.2.11
+drwxr-xr-x	0/0	sbin/
+lrwxrwxrwx	0/0	sbin/depmod -> kmod
+lrwxrwxrwx	0/0	sbin/insmod -> kmod
+-rwxr-xr-x	0/0	sbin/kmod
+lrwxrwxrwx	0/0	sbin/modinfo -> kmod
+lrwxrwxrwx	0/0	sbin/modprobe -> kmod
+lrwxrwxrwx	0/0	sbin/rmmod -> kmod
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/include/
+-rw-r--r--	0/0	usr/include/libkmod.h
+drwxr-xr-x	0/0	usr/lib/
+-rwxr-xr-x	0/0	usr/lib/libkmod.la
+lrwxrwxrwx	0/0	usr/lib/libkmod.so -> ../../lib/libkmod.so.2.2.11
+drwxr-xr-x	0/0	usr/lib/pkgconfig/
+-rw-r--r--	0/0	usr/lib/pkgconfig/libkmod.pc
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man5/
+-rw-r--r--	0/0	usr/man/man5/depmod.d.5.gz
+-rw-r--r--	0/0	usr/man/man5/modprobe.d.5.gz
+-rw-r--r--	0/0	usr/man/man5/modules.dep.5.gz
+-rw-r--r--	0/0	usr/man/man5/modules.dep.bin.5.gz
+drwxr-xr-x	0/0	usr/man/man8/
+-rw-r--r--	0/0	usr/man/man8/depmod.8.gz
+-rw-r--r--	0/0	usr/man/man8/insmod.8.gz
+-rw-r--r--	0/0	usr/man/man8/kmod.8.gz
+-rw-r--r--	0/0	usr/man/man8/lsmod.8.gz
+-rw-r--r--	0/0	usr/man/man8/modinfo.8.gz
+-rw-r--r--	0/0	usr/man/man8/modprobe.8.gz
+-rw-r--r--	0/0	usr/man/man8/rmmod.8.gz

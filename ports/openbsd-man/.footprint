@@ -1,0 +1,10 @@
+drwxr-xr-x	0/0	etc/
+-rw-r--r--	0/0	etc/man.conf
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+-rwxr-xr-x	0/0	usr/bin/man
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man1/
+-rw-r--r--	0/0	usr/man/man1/man.1.gz
+drwxr-xr-x	0/0	usr/man/man5/
+-rw-r--r--	0/0	usr/man/man5/man.conf.5.gz

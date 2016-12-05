@@ -1,0 +1,261 @@
+#!/bin/sh
+#
+# Build script for CROSS
+#
+
+trap 'exit 2' 1 2 3 13 15
+
+OSNAME='CROSS'
+VERSION='2015.02'
+BLD_DIR="$PWD"
+OBJ_DIR='/var/obj'
+TMP_DIR='/var/tmp'
+PRT_DIR='/var/ports'
+SRC_DIR='/var/cache/src'
+PKG_DIR='/var/cache/pkg'
+ISOFS_DIR="${TMP_DIR}/iso.fs"
+ROOTFS_DIR="${TMP_DIR}/root.fs"
+FAKEROOT_DIR="${TMP_DIR}/fakeroot"
+UPLOAD_DIR="${PWD}/ports"
+ISO_DIR="${PWD}/iso"
+
+PORTS=(cross core opt contrib)
+
+ISO_PACKAGES=(base bzip2 coreutils cpio e2fsprogs findutils gawk glibc grep gzip kernel kmod less libgmp libpcre \
+mdadm mksh ncurses pciutils pkgutils procps readline sed shadow syslinux sysvinit tar util-linux vim which xz zlib)
+
+PACKAGES=(${ISO_PACKAGES[@]} autoconf automake bc binutils bison cdrtools console-font-terminus curl db dcron \
+dhcpcd diffutils eudev file flex gcc gdbm gettext httpup iana-etc inetutils initscripts iproute2 iputils iptables kbd ldns \
+libarchive libmpc libmpfr libnl libressl libtool libusb lsof m4 make mdocml mlocate nasm openbsd-man openrdate openssh patch \
+perl pkg-config ports prt-get psmisc rsync sudo tzdata usbutils wget wireless-tools wpa_supplicant)
+
+if [ $(id -u) -ne 0 ]; then
+	echo "You must be root to run $0"
+	exit 1
+fi
+
+for DIR in "$PRT_DIR" "$SRC_DIR" "$PKG_DIR" "$TMP_DIR"; do
+	if [ ! -d "$DIR" ]; then
+		echo "$DIR directory doesn't exist"
+		exit 1
+	fi
+done
+
+upload() {
+	sed -ri "s|(^VERSION=).*$|\1'$@'|"				${ISO_DIR}/bin/setup
+	sed -ri "s|(^MENU TITLE).*$|\1 $OSNAME $@ installation CD|"	${ISO_DIR}/syslinux/syslinux.cfg
+	sed -ri "s|(^MENU TITLE).*$|\1 $OSNAME $@|"			${UPLOAD_DIR}/syslinux/syslinux.cfg
+	sed -ri -e "s|(^version=).*$|\1$@|" -e "s|(^release=).*$|\11|"	${UPLOAD_DIR}/base/Pkgfile
+	sed -ri -e "s|(^version=).*$|\1$@|" -e "s|(^release=).*$|\11|"	${UPLOAD_DIR}/initscripts/Pkgfile
+
+#	for DIR in ${UPLOAD_DIR}/*; do
+#		if [ -d "$DIR" ]; then
+#			echo "=======> Entering ${DIR##*/}"
+#			cd $DIR
+#			pkgmk -um || exit 1
+#			pkgmk -uf || exit 1
+#			echo
+#		fi
+#	done
+
+	httpup-repgen $UPLOAD_DIR || exit 1
+	rsync -avzOJ --delete -e ssh ${UPLOAD_DIR}/ gloomyquazar,crosslinux@web.sourceforge.net:htdocs/ || exit 1
+	ssh gloomyquazar,crosslinux@shell.sourceforge.net create || exit 1
+	ssh gloomyquazar@shell.sourceforge.net 'rm -rf /home/scm_hg/c/cr/crosslinux/* && cp -rv /home/project-web/crosslinux/htdocs/* /home/scm_hg/c/cr/crosslinux/' || exit 1
+
+	for PORT in "${PORTS[@]}"; do
+		ports -u $PORT || exit 1
+	done
+}
+
+clean_tmp() {
+	echo '=======> Deleting temporary files'
+	rm -fr	$OBJ_DIR/* \
+		$ISOFS_DIR \
+		$ROOTFS_DIR \
+		$FAKEROOT_DIR \
+		${TMP_DIR}/{log.stage*,iso.sort}
+}
+
+clean() {
+	clean_tmp
+
+	echo '=======> Deleting old packages'
+	for PACKAGE in "${PACKAGES[@]}"; do
+		rm -fv ${PKG_DIR}/${PACKAGE}\#*.pkg.*
+	done
+
+	rm -f ${BLD_DIR}/${OSNAME}-${VERSION}.{iso,list,md5}
+}
+
+check_log() {
+	grep '^=======> ERROR:' "$1" && echo '=======> See log file for details' && exit 1
+}
+
+build_all() {
+	if [ "$1" == "force" ]; then
+		FORCE='-f'
+	else
+		FORCE=
+	fi
+
+	for PACKAGE in "${PACKAGES[@]}"; do
+		for PORT in "${PORTS[@]}"; do
+			if [ -d "${PRT_DIR}/${PORT}/${PACKAGE}" ]; then
+				cd ${PRT_DIR}/${PORT}/${PACKAGE}
+				pkgmk -im -d $FORCE
+				break
+			fi
+		done
+	done
+}
+
+build_chroot() {
+	mkdir -p ${FAKEROOT_DIR}/var/lib/pkg
+	touch ${FAKEROOT_DIR}/var/lib/pkg/db
+
+	for PACKAGE in "${PACKAGES[@]}"; do
+		echo "=======> Unpacking $PACKAGE"
+		pkgadd -r $FAKEROOT_DIR ${PKG_DIR}/${PACKAGE}\#*.pkg.*
+	done
+
+	for MNT_DIR in dev proc var; do
+		mount --bind /${MNT_DIR} ${FAKEROOT_DIR}/${MNT_DIR} || { echo "Unable to mount ${FAKEROOT_DIR}/${MNT_DIR}"; exit 1; }
+	done
+
+	cp ${BLD_DIR}/${0} ${FAKEROOT_DIR}/var/src/
+
+	LC_ALL=C chroot $FAKEROOT_DIR /bin/mksh -l -c "cd /var/src && $0 force"
+	cd $BLD_DIR
+	for MNT_DIR in var proc dev; do
+		if ! umount ${FAKEROOT_DIR}/${MNT_DIR}; then
+			echo "Unable to unmount ${FAKEROOT_DIR}/${MNT_DIR}"
+			exit 1
+		fi
+	done
+	rm -rf $FAKEROOT_DIR
+
+}
+
+build_pkg() {
+	clean_tmp
+	echo '=======> Building packages'
+
+	echo "* Stage 0            $(date +'%F %T')" > ${TMP_DIR}/log.stage0
+	build_all 2>&1 | tee -a ${TMP_DIR}/log.stage0
+	check_log ${TMP_DIR}/log.stage0
+
+	echo "* Stage 1            $(date +'%F %T')" > ${TMP_DIR}/log.stage1
+	build_chroot 2>&1 | tee -a ${TMP_DIR}/log.stage1
+	check_log ${TMP_DIR}/log.stage1
+
+	echo "* Stage 2            $(date +'%F %T')" > ${TMP_DIR}/log.stage2
+	build_chroot 2>&1 | tee -a ${TMP_DIR}/log.stage2
+	check_log ${TMP_DIR}/log.stage2
+	echo "=======> Bootstrap completed  $(date +'%F %T')"
+}
+
+build_rootfs() {
+	clean_tmp
+
+	mkdir -p $ROOTFS_DIR
+
+	echo '=======> Creating rootfs'
+	for PACKAGE in "${ISO_PACKAGES[@]}"; do
+		bsdtar -xpf ${PKG_DIR}/${PACKAGE}\#*.pkg.* -C $ROOTFS_DIR
+	done
+
+	mv ${ROOTFS_DIR}/boot ${TMP_DIR}/
+	install -D -m644 ${ROOTFS_DIR}/usr/share/terminfo/l/linux ${TMP_DIR}/terminfo/l/linux
+
+	rm -rf	${ROOTFS_DIR}/{home,mnt,var} \
+		${ROOTFS_DIR}/etc/{host,ld.so,resolv,nsswitch,sysctl,pkgadd,pkgmk,rejmerge,nscd}.conf \
+		${ROOTFS_DIR}/etc/{adjtime,cron,hosts,issue,login.defs,mime.types,motd,mtab,rpc,securetty,shadow,skel,udev,version} \
+		${ROOTFS_DIR}/etc/{depmod,ld.so.conf,modprobe,profile,rc}.d \
+		${ROOTFS_DIR}/lib/{modules/*/{build,modules.{alias,dep,softdep,symbols}},firmware,udev/{accelerometer,collect,devices,hwdb.d}} \
+		${ROOTFS_DIR}/usr/lib/{*.{a,la,o},lib{c,pthread}.so,audit,{,g}awk,coreutils,ex,firmware,gconv,getconf,less,locale,pkgconfig,tar} \
+		${ROOTFS_DIR}/usr/share/{awk,et,ss,i18n,locale,pkgconfig,readline,tabset/vt300,{term,zone}info} \
+		${ROOTFS_DIR}/usr/{include,libexec,man,ports,src} \
+		${ROOTFS_DIR}/var/{lib/libuuid,src}
+
+	for DIR in ${ROOTFS_DIR}/{bin,usr/bin,sbin,usr/sbin}; do
+		cd $DIR && rm -f \
+		[ agetty blockdev bootlogd captoinfo catchsegv ch{cpu,kdupexe} colcrt compile_et cytune ddate dgawk extlinux factor \
+		fdformat findmnt fsck.{cramfs,ext4dev,minix} gencat gobject-query iconv{,config} ifcfg igawk info{cmp,tocap} isohybrid \
+		{insmod,mdadm}.static last{,b} ld{attach,dr} less{echo,key} locale{,def} locate log{ger,in} look {ch,ls}attr \
+		makedb mcookie mdmon mesg mk_cmds mkfs.{bfs,cramfs,ext4dev,minix} {m,x}trace ncurses* nscd nproc oldfind pathchk \
+		pcprofiledump pcre{-config,test} pg pinky pkgmk printenv raw readprofile rejmerge rpc{gen,info} rtcwake \
+		script{,replay} setpci sfdisk slabtop sln sotruss sprof start_udev stdbuf {sys,wd}ctl tabs taskset test tic toe tload \
+		tunelp tzselect update{-*,db} users uuidd {,v}dir wall w{,ho} write zdump zic znew
+	done
+
+	ln -sf /sbin/init ${ROOTFS_DIR}/init
+
+	cp -f ${BLD_DIR}/iso/etc/* ${ROOTFS_DIR}/etc
+	install -m755 ${BLD_DIR}/iso/bin/setup ${ROOTFS_DIR}/usr/bin
+	install -m755 ${BLD_DIR}/iso/bin/getty ${ROOTFS_DIR}/sbin
+
+	mv ${TMP_DIR}/terminfo ${ROOTFS_DIR}/usr/share
+
+	mkdir -p ${ROOTFS_DIR}/{${OSNAME},mnt,var/lib}
+	ln -sf /tmp ${ROOTFS_DIR}/var/tmp
+	ln -sf /tmp ${ROOTFS_DIR}/var/lock
+	ln -sf /run ${ROOTFS_DIR}/var/run
+
+	ldconfig -r $ROOTFS_DIR &> /dev/null
+
+	echo '=======> Compressing rootfs'
+	cd $ROOTFS_DIR && find . | cpio --quiet -H newc -o | xz -C crc32 -f -c > ${TMP_DIR}/rootfs
+}
+
+build_iso() {
+	build_rootfs
+
+	echo "=======> Building ${OSNAME}-${VERSION}.iso"
+	mkdir -p ${ISOFS_DIR}/pkg
+	mv ${TMP_DIR}/boot $ISOFS_DIR
+	mv ${TMP_DIR}/rootfs ${ISOFS_DIR}/boot
+	rm ${ISOFS_DIR}/boot/syslinux/{chain.c32,{ldlinux,mbr}.bin}
+	rm ${ISOFS_DIR}/boot/System.map
+	install -m644 ${BLD_DIR}/iso/syslinux/syslinux.cfg ${ISOFS_DIR}/boot/syslinux
+	install -m644 ${BLD_DIR}/iso/doc/installation $ISOFS_DIR
+	echo ${VERSION}-"$(date +'%Y%m%d')" > ${ISOFS_DIR}/version
+
+	for PACKAGE in "${PACKAGES[@]}"; do
+		cp -r ${PKG_DIR}/${PACKAGE}\#*.pkg.* $ISOFS_DIR/pkg
+		echo ${PKG_DIR}/${PACKAGE}\#*.pkg.* | sed -e 's|.*/||' -e 's|.pkg.tar.xz||'
+	done | column -x -t -s '#' >> ${BLD_DIR}/${OSNAME}-${VERSION}.list
+
+	echo "${ISOFS_DIR}/boot 100" > ${TMP_DIR}/iso.sort
+	echo "${ISOFS_DIR}/boot/syslinux 200" >> ${TMP_DIR}/iso.sort
+	echo "${ISOFS_DIR}/boot/syslinux/isolinux.bin 300" >> ${TMP_DIR}/iso.sort
+
+	mkisofs -quiet -N -D -l -r -V $OSNAME -A ${OSNAME}-${VERSION} -b boot/syslinux/isolinux.bin -cache-inodes \
+		-c boot/syslinux/isolinux.boot -no-emul-boot -boot-load-size 4 -allow-multidot -allow-leading-dots \
+		-boot-info-table -hide-rr-moved -sort ${TMP_DIR}/iso.sort -o ${BLD_DIR}/${OSNAME}-${VERSION}.iso $ISOFS_DIR 2> /dev/null
+
+	isohybrid --partok ${BLD_DIR}/${OSNAME}-${VERSION}.iso
+
+	cd $BLD_DIR && md5sum ${OSNAME}-${VERSION}.iso > ${BLD_DIR}/${OSNAME}-${VERSION}.md5
+}
+
+usage() {
+	cat <<\PrintMsg
+usage: build [command]
+
+    clean		- delete temporary files / old packages
+    upload		- upload local ports
+    pkg			- build packages
+    iso			- build ISO image
+
+PrintMsg
+}
+
+case "$1" in
+	clean)		clean		;;
+	upload)		upload $VERSION	;;
+	pkg)		build_pkg	;;
+	force)		build_all force	;;
+	iso)		build_iso	;;
+	*)		usage		;;
+esac

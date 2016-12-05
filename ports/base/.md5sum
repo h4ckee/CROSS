@@ -1,0 +1,14 @@
+94b55b4f85cc05ac9303c146fc664273  dircolors
+eb1f8e64d6e1168902debd57341ef72c  fstab
+fdecde8b1b0b5de0a8a476fbd6e22641  group
+6f9283dac274223c1d93d01d37177620  host.conf
+2778ff1c83b085263ae0219cc140c566  hosts
+0c51b55ea0daaf6cb2d27b419446e629  issue
+346ede8d637940e2898cd29c56a37d30  mime.types
+75931315bf9bc9be15a5e25e4ddd5f0d  nsswitch.conf
+79e3fc3b641e625075fb58d8a48a65a3  passwd
+acf9daad1ee85de5efd3543965596a63  resolv.conf
+3e7ed939c40b193bbe96bbeaf7151a96  securetty
+f81a28b6cb44168f2e117ba5458a15ed  shadow
+9777d5c23c28eb2215661042b92a9b6a  shells
+401f7a94bc74c8f4d81dc693156f20fb  useradd.defaults

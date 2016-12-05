@@ -1,0 +1,134 @@
+# Description:	Linux kernel
+# URL:		www.kernel.org
+# Depends on:	bc
+
+name=kernel
+version=3.19
+release=1
+source=(http://www.kernel.org/pub/linux/kernel/v3.x/linux-$version.tar.xz
+	.config patch-fonts.xz console-loglevel.patch
+	http://ck.kolivas.org/patches/bfs/3.0/$version/$version-sched-bfs-461.patch
+	http://algo.ing.unimo.it/people/paolo/disk_sched/patches/$version.0-v7r7/0001-block-cgroups-kconfig-build-bits-for-BFQ-v7r7-$version.patch
+	http://algo.ing.unimo.it/people/paolo/disk_sched/patches/$version.0-v7r7/0002-block-introduce-the-BFQ-v7r7-I-O-sched-for-$version.patch
+	http://algo.ing.unimo.it/people/paolo/disk_sched/patches/$version.0-v7r7/0003-block-bfq-add-Early-Queue-Merge-EQM-to-BFQ-v7r7-for-$version.0.patch
+	http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git/plain/iwlwifi-6000g2a-5.ucode
+	http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git/plain/iwlwifi-6000g2a-6.ucode)
+
+build() {
+	KARCH=x86
+	KSRC="$PKG/var/src/linux-$version"
+
+	cd linux-*
+
+	for patch in $SRC/patch-*.xz; do
+		xzcat $patch | patch -p1
+	done
+
+	for patch in $SRC/*.patch; do
+		patch -p1 < $patch
+	done
+
+	mv $SRC/.config .
+
+	make prepare
+	make oldconfig
+	make
+	make INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$PKG modules_install
+	make INSTALL_HDR_PATH=$PKG/usr headers_install
+
+	install -D -m644 arch/$KARCH/boot/bzImage $PKG/boot/$name
+	install -D -m644 System.map $PKG/boot/System.map
+
+	find $PKG/lib/modules/$version/kernel -type f -iname '*.ko' | while read module; do
+		strip --strip-unneeded $module
+		xz -v $module
+	done
+
+	depmod -ae -F System.map -b $PKG -r $version $PKG/lib/modules/$version/modules.dep
+
+	install -d -m755 $PKG/lib/firmware
+	install -D -m644 $SRC/iwlwifi-6000g2a-5.ucode $PKG/lib/firmware
+	install -D -m644 $SRC/iwlwifi-6000g2a-6.ucode $PKG/lib/firmware
+
+	install -D -m644 Makefile $KSRC/Makefile
+	install -D -m644 kernel/Makefile $KSRC/kernel/Makefile
+	install -D -m644 .config $KSRC/.config
+	mkdir -p $KSRC/include
+
+	for i in acpi asm-generic config crypto drm generated keys linux math-emu media net pcmcia scsi sound trace uapi video xen; do
+		cp -a include/$i $KSRC/include/
+	done
+
+	mkdir -p $KSRC/arch/$KARCH/kernel
+	cp -a arch/$KARCH/include $KSRC/arch/$KARCH/
+
+	cp Module.symvers $KSRC/
+	cp -a scripts $KSRC/
+	chmod og-w -R $KSRC/scripts
+
+	cp arch/$KARCH/Makefile $KSRC/arch/$KARCH/
+	cp arch/$KARCH/kernel/asm-offsets.s $KSRC/arch/$KARCH/kernel/
+
+	for i in bt8xx cx88 saa7134; do
+		mkdir -p $KSRC/drivers/media/pci/$i
+		cp -a drivers/media/pci/$i/*.h $KSRC/drivers/media/pci/$i
+	done
+
+	for i in cpia2 em28xx pwc; do
+		mkdir -p $KSRC/drivers/media/usb/$i
+		cp -a drivers/media/usb/$i/*.h $KSRC/drivers/media/usb/$i
+	done
+
+	mkdir -p $KSRC/drivers/media/i2c
+	cp drivers/media/i2c/*.h $KSRC/drivers/media/i2c/
+	for i in cx25840; do
+		mkdir -p $KSRC/drivers/media/i2c/$i
+		cp -a drivers/media/i2c/$i/*.h $KSRC/drivers/media/i2c/$i
+	done
+
+	mkdir -p $KSRC/drivers/md
+	cp drivers/md/*.h  $KSRC/drivers/md/
+
+	mkdir -p $KSRC/include/linux
+	cp include/linux/inotify.h $KSRC/include/linux/
+
+	mkdir -p $KSRC/net/mac80211
+	cp net/mac80211/*.h $KSRC/net/mac80211/
+
+	mkdir -p $KSRC/drivers/media/dvb-core
+	cp drivers/media/dvb-core/*.h $KSRC/drivers/media/dvb-core/
+
+	mkdir -p $KSRC/include/uapi/linux/dvb
+	cp include/uapi/linux/dvb/*.h $KSRC/include/uapi/linux/dvb/
+
+	mkdir -p $KSRC/drivers/media/dvb-frontends
+	cp drivers/media/dvb-frontends/*.h $KSRC/drivers/media/dvb-frontends/
+
+	mkdir -p $KSRC/drivers/media/usb/dvb-usb
+	cp drivers/media/usb/dvb-usb/*.h $KSRC/drivers/media/usb/dvb-usb/
+
+	mkdir -p $KSRC/drivers/media/tuners
+	cp drivers/media/tuners/*.h $KSRC/drivers/media/tuners/
+
+	for i in $(find . -name "Kconfig*"); do
+		mkdir -p $KSRC/$(echo $i | sed 's|/Kconfig.*||')
+		cp $i $KSRC/$i
+	done
+
+	find $KSRC/scripts -type f -perm -u+w 2>/dev/null | while read binary ; do
+		case "$(file -bi $binary)" in
+			*application/x-sharedlib*)	strip --strip-unneeded $binary ;;
+			*application/x-archive*)	strip -d $binary ;;
+			*application/x-executable*)	strip -s $binary ;;
+		esac
+	done
+
+	rm -rf $KSRC/arch/{alpha,arc,arm,arm26,arm64,avr32,blackfin,c6x,cris,frv,h8300,hexagon,ia64,m32r,m68k,m68knommu,metag,mips,microblaze,mn10300,openrisc,parisc,powerpc,ppc,s390,score,sh,sh64,sparc,sparc64,tile,unicore32,um,v850,xtensa}
+	find $KSRC -type f \( -name .\*.cmd -o -name README \) -delete
+	find $KSRC -type d -exec chmod 755 '{}' \;
+	cd $PKG/lib/modules/$version && (rm -f source build; ln -sf ../../../var/src/linux-$version build)
+	cd $PKG/var/src && (ln -sf linux-$version linux)
+
+	rm -rf $PKG/usr/include/{drm,uapi,xen}
+	find $PKG/usr \( -name .install -o -name ..install.cmd \) -delete
+}

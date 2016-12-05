@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# /etc/rc.d/rsyncd: start/stop rsyncd daemon
+#
+
+case $1 in
+start)
+	/usr/bin/rsync --daemon
+	;;
+stop)
+	if [ -f /run/rsyncd.pid ]; then
+		kill $(< /run/rsyncd.pid)
+		rm -f /run/rsyncd.pid
+	else
+		killall -q /usr/bin/rsync
+	fi
+	;;
+restart)
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+*)
+	echo "usage: $0 [start|stop|restart]"
+	;;
+esac
+
+# End of file

@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# /etc/ports/drivers/rsync: rsync(1) driver script for ports(8)
+#
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 <file>" >&2
+	exit 1
+fi
+
+error() {
+	echo -e "Error: $@" >&2
+	exit 1
+}
+
+source "$1" 2> /dev/null || error "Couldn't open $1"
+
+[ "$host" ] || error "Host not set in $1"
+[ "$collection" ] || error "Collection not set in $1"
+[ "$destination" ] || error "Destination not set in $1"
+
+echo "Updating collection ${destination##*/}"
+
+rsync -crzil --delete -i ${host}::${collection} $destination | \
+sed -r -e 's/^>f[^+]{9}/*updating  /' -e 's/^(>f|cL)\+{9}/*creating  /' -e '/^\.(d|f|L)/d' -e '/^cd\+{9}/d' || error 'Running rsync failed'
+
+echo 'Finished successfully'
+
+# End of file

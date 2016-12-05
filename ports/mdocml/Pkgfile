@@ -1,0 +1,17 @@
+# Description: mdocml is to deprecate groff
+# URL:         http://mdocml.bsd.lv/
+
+name=mdocml
+version=1.13.3
+release=1
+source=(http://mdocml.bsd.lv/snapshots/$name-$version.tar.gz)
+
+build() {
+	cd $name-$version
+	echo 'BUILD_DB=0' > configure.local
+	echo 'PREFIX="/usr"' >> configure.local
+	./configure
+	make
+	make DESTDIR=$PKG MANDIR=/usr/man install
+	rm -rf $PKG/usr/{include,lib,share}
+}

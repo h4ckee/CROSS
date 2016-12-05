@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# /etc/rc.d/rc.single: single-user startup script
+#
+
+. /etc/rc.conf
+
+if [[ "$PREVLEVEL" == "2" && "${SERVICES[*]}" ]]; then
+	echo -n 'STOPPING:'
+	(( I=${#SERVICES[@]}-1 ))
+	while (( $I >= 0 )); do
+		echo -n " ${SERVICES[$I]}"
+		/etc/rc.d/${SERVICES[$I]#@} stop &> /dev/null
+		(( I-- ))
+	done
+	echo
+fi
+
+if [ "$PREVLEVEL" != N ]; then
+	/sbin/killall5 -15
+	/bin/sleep 2
+	/sbin/killall5 -9
+	/sbin/udevd --daemon
+fi
+
+if [ "$RUNLEVEL" == "1" ]; then
+	/bin/kill -HUP 1
+	exec /sbin/init S
+fi
+
+# End of file

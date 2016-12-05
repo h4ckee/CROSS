@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# System setup
+#
+
+OSNAME='CROSS'
+VERSION='2015.02'
+PKGDIR="/${OSNAME}/pkg"
+DSTDIR='/mnt'
+
+if pidof -o $$ -x $0 > /dev/null; then
+	echo "${0##*/} has already been started, exiting..."
+	exit 1
+fi
+
+if ! mountpoint -q $DSTDIR; then
+	echo "ERROR: $OSNAME root partition isn't mounted over $DSTDIR"
+	exit 1
+fi
+
+if [ ! -d "$PKGDIR" ]; then
+	echo "ERROR: Directory $PKGDIR not found"
+	exit 1
+fi
+
+POS1=$(($(tput cols) / 2 - 12))
+POS2=$(($(tput cols) - 5))
+
+if [ -s "${DSTDIR}/var/lib/pkg/db" ]; then
+	rm -rf ${DSTDIR}/var/lib/pkg/rejected
+	ACTION='Upgrading'
+	UPGRADE='-u'
+else
+	mkdir -p ${DSTDIR}/var/lib/pkg
+	touch ${DSTDIR}/var/lib/pkg/db
+	ACTION='Installing'
+fi
+
+echo -e "\e[${POS1}G\e[0;31m${ACTION} $OSNAME ${VERSION}\e[m"
+
+for PACKAGE in ${PKGDIR}/*.pkg.*; do
+	echo -en " \e[1;30m*\e[m ${PACKAGE##*/}"
+	pkgadd -r $DSTDIR $UPGRADE $PACKAGE &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo -e "\e[${POS2}G\e[0;32mOK\e[m"
+	else
+		echo -e "\e[${POS2}G\e[0;31mERROR\e[m"
+	fi
+done
+
+mount --bind /dev ${DSTDIR}/dev
+mount -t proc proc ${DSTDIR}/proc
+mount -t sysfs sysfs ${DSTDIR}/sys
+
+chroot $DSTDIR /bin/mksh -l
+
+umount ${DSTDIR}/sys
+umount ${DSTDIR}/proc
+umount ${DSTDIR}/dev
+
+# End of file

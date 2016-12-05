@@ -1,0 +1,22 @@
+# Description: Basic networking applet
+# URL: http://www.linux-foundation.org/en/Net:Iputils
+# Depends on: libressl
+
+name=iputils
+version=s20121221
+release=2
+source=(http://www.skbuff.net/$name/$name-$version.tar.bz2
+        http://crux.nu/files/distfiles/$name-man-$version.tar.xz)
+
+build() {
+	cd $name-$version
+
+	make USE_CAP=no USE_GNUTLS=no CCOPTOPT="$CFLAGS"
+
+	install -d $PKG/{{s,}bin,usr/{man/man8,bin}}
+	install arping $PKG/sbin/
+	install {ping,tracepath} $PKG/bin/
+	cp -d $SRC/$name-man-$version/{ping,tracepath}.8.gz $PKG/usr/man/man8
+
+	chmod u+s $PKG/bin/ping
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+/bin/mount /dev
+/bin/mount -a

@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# /etc/rc.d/rc.shutdown: system shutdown script
+#
+
+. /etc/rc.conf
+
+/bin/stty onlcr
+
+if [[ "$PREVLEVEL" == "2" && "${SERVICES[*]}" ]]; then
+	echo -n 'STOPPING:'
+	(( I=${#SERVICES[@]}-1 ))
+	while (( $I >= 0 )); do
+		echo -n " ${SERVICES[$I]}"
+		/etc/rc.d/${SERVICES[$I]#@} stop &> /dev/null
+		(( I-- ))
+	done
+	echo
+fi
+
+/sbin/udevadm control --exit
+/sbin/killall5 -15
+/bin/sleep 2
+/sbin/killall5 -9
+/bin/dd if=/dev/urandom of=/var/lib/urandom/seed count=1 bs=$(< /proc/sys/kernel/random/poolsize) 2> /dev/null
+/sbin/hwclock --systohc --localtime
+/sbin/halt -w
+/sbin/swapoff -a
+/bin/umount -a -d -n -r
+
+if [ "$RUNLEVEL" == "0" ]; then
+	/sbin/poweroff -d -f -i
+else
+	/sbin/reboot -d -f -i
+fi
+
+# End of file

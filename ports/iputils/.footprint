@@ -1,0 +1,11 @@
+drwxr-xr-x	0/0	bin/
+-rwsr-xr-x	0/0	bin/ping
+-rwxr-xr-x	0/0	bin/tracepath
+drwxr-xr-x	0/0	sbin/
+-rwxr-xr-x	0/0	sbin/arping
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man8/
+-rw-r--r--	0/0	usr/man/man8/ping.8.gz
+-rw-r--r--	0/0	usr/man/man8/tracepath.8.gz

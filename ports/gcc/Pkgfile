@@ -1,0 +1,62 @@
+# Description: The GNU Compiler Collection
+# URL:         http://gcc.gnu.org
+# Depends on:  binutils libmpc
+
+name=gcc
+version=4.9.3
+release=1
+source=(ftp://ftp.gnu.org/gnu/$name/$name-$version/$name-$version.tar.bz2)
+
+build() {
+	sed -i '/m64=/s/lib64/lib/' $name-$version/gcc/config/i386/t-linux64
+	sed -i 's/^T_CFLAGS =$/& -fomit-frame-pointer/' $name-$version/gcc/Makefile.in
+
+	mkdir build
+	cd build
+
+	../$name-$version/configure \
+		--prefix=/usr \
+		--libdir=/usr/lib \
+		--libexecdir=/usr/lib \
+		--mandir=/usr/man \
+		--enable-languages=c,c++ \
+		--enable-threads=posix \
+		--enable-__cxa_atexit \
+		--enable-clocale=gnu \
+		--enable-shared \
+		--enable-gnu-unique-object \
+		--enable-checking=release \
+		--disable-multilib \
+		--disable-nls \
+		--disable-libstdcxx-pch \
+		--disable-libunwind-exceptions \
+		--disable-libquadmath \
+		--disable-lto \
+		--disable-build-with-cxx \
+		--disable-build-poststage1-with-cxx \
+		--disable-install-libiberty \
+		--with-linker-hash-style=gnu \
+		--with-system-zlib \
+		--with-x=no \
+		--with-pkgversion='CROSS'
+
+	make
+	ulimit -s 32768
+	make -k check || true
+	make -j1 DESTDIR=$PKG install
+
+	mkdir $PKG/lib
+	ln -sf /usr/bin/cpp $PKG/lib/cpp
+	ln -sf gcc $PKG/usr/bin/cc
+	ln -sf g++ $PKG/usr/bin/c++
+	ln -sf g++.1 $PKG/usr/man/man1/gcc.1
+
+	mv $PKG/usr/lib/$name/*/$version/include-fixed/{,sys}limits.h $PKG/usr/lib/$name/*/$version/include/
+	rm -rf	$PKG/usr/bin/x86_64-unknown-linux-gnu-* \
+		$PKG/usr/share \
+		$PKG/usr/man/man7 \
+		$PKG/usr/bin/{gccbug,*-linux-gnu-*} \
+		$PKG/usr/lib/$name/*/$version/{install-tools,include-fixed,finclude} \
+		$PKG/usr/lib/$name/*/$version/plugin/include/{ada,java,objc} \
+		$PKG/usr/lib/{libiberty.a,*.py}
+}

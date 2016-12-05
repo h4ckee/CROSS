@@ -1,0 +1,8 @@
+drwxr-xr-x	0/0	etc/
+-rw-r--r--	0/0	etc/wgetrc
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+-rwxr-xr-x	0/0	usr/bin/wget
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man1/
+-rw-r--r--	0/0	usr/man/man1/wget.1.gz

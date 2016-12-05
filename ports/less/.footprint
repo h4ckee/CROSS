@@ -1,0 +1,13 @@
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+-rwxr-xr-x	0/0	usr/bin/less
+-rwxr-xr-x	0/0	usr/bin/lessecho
+-rwxr-xr-x	0/0	usr/bin/lesskey
+drwxr-xr-x	0/0	usr/lib/
+drwxr-xr-x	0/0	usr/lib/less/
+-rwxr-xr-x	0/0	usr/lib/less/filter
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man1/
+-rw-r--r--	0/0	usr/man/man1/less.1.gz
+-rw-r--r--	0/0	usr/man/man1/lessecho.1.gz
+-rw-r--r--	0/0	usr/man/man1/lesskey.1.gz

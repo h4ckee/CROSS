@@ -1,0 +1,48 @@
+# Description: Userspace device management daemon
+# URL:         http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
+# Depends on:  kmod
+
+name=eudev
+version=3.1.2
+release=1
+source=(http://dev.gentoo.org/~blueness/$name/$name-$version.tar.gz
+        $name-remove_gperf_dep.patch
+        keyboard-keys.tar.xz)
+
+build() {
+	cd $name-$version
+
+	cp $SRC/keyboard-keys-{from,to}-name.h src/udev
+	patch -p1 -i $SRC/eudev-remove_gperf_dep.patch
+	sed -i '/^Libs:/s/-ludev/-ludev -lrt/' src/libudev/libudev.pc.in
+
+	autoreconf --force --install
+
+	./configure --prefix=/usr \
+		--bindir=/sbin \
+		--sbindir=/sbin \
+		--sysconfdir=/etc \
+		--with-rootprefix= \
+		--with-rootlibdir=/lib \
+		--libexecdir=/lib \
+		--disable-introspection \
+		--disable-gudev \
+		--disable-manpages \
+		--disable-keymap \
+		--disable-selinux \
+		--enable-static=no \
+		--enable-split-usr \
+		--enable-modules \
+		--enable-libkmod
+
+	make CFLAGS="$CFLAGS -D_GNU_SOURCE"
+	make DESTDIR=$PKG install
+
+	LD_LIBRARY_PATH=$PKG/lib $PKG/sbin/udevadm hwdb --update --root=$PKG
+
+	mkdir -p $PKG/lib/udev/devices/{pts,shm}
+	mkdir -p $PKG/{lib,sbin}
+
+	ln -sf /dev/null $PKG/lib/udev/rules.d/80-net-name-slot.rules
+	rm -r $PKG/usr/share
+}

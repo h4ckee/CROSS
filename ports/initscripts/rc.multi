@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# /etc/rc.d/rc.multi: multi-user startup script
+#
+
+. /etc/rc.conf
+
+if [ "${SERVICES[*]}" ]; then
+	echo -n 'STARTING:'
+	for SERVICE in "${SERVICES[@]}"; do
+		echo -n " $SERVICE"
+		if [ "$SERVICE" == "${SERVICE#@}" ]; then
+			/etc/rc.d/${SERVICE} start &> /dev/null || echo -n ':FAILED'
+		else
+			(/etc/rc.d/${SERVICE#@} start) &> /dev/null &
+		fi
+	done
+	echo
+fi
+
+/etc/rc.d/rc.local
+
+# End of file

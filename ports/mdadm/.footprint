@@ -1,0 +1,12 @@
+drwxr-xr-x	0/0	sbin/
+-rwxr-xr-x	0/0	sbin/mdadm
+-rwxr-xr-x	0/0	sbin/mdmon
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man4/
+-rw-r--r--	0/0	usr/man/man4/md.4.gz
+drwxr-xr-x	0/0	usr/man/man5/
+-rw-r--r--	0/0	usr/man/man5/mdadm.conf.5.gz
+drwxr-xr-x	0/0	usr/man/man8/
+-rw-r--r--	0/0	usr/man/man8/mdadm.8.gz
+-rw-r--r--	0/0	usr/man/man8/mdmon.8.gz

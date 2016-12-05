@@ -1,0 +1,36 @@
+# Description: Linux kernel module handling
+# URL:         http://git.profusion.mobi/cgit.cgi/kmod.git
+# Depends on:  xz
+
+name=kmod
+version=21
+release=1
+source=(http://www.kernel.org/pub/linux/utils/kernel/$name/$name-$version.tar.xz)
+
+build() {
+	cd $name-$version
+
+	./configure --prefix=/usr \
+		--sysconfdir=/etc \
+		--bindir=/sbin \
+		--disable-manpages \
+		--with-rootlibdir=/lib \
+		--with-xz
+
+	make
+	make DESTDIR=$PKG install
+
+	install -d -m 755 $PKG/bin
+	install -d -m 755 $PKG/etc/{depmod,modprobe}.d
+	install -d -m 755 $PKG/usr/man/{man5,man8}
+
+	install -m 644 man/*.5 $PKG/usr/man/man5
+	install -m 644 man/*.8 $PKG/usr/man/man8
+
+	ln -s /sbin/kmod $PKG/bin/lsmod
+	for i in {ins,rm,dep}mod mod{info,probe}; do
+		ln -s kmod $PKG/sbin/$i
+	done
+
+	rm -r $PKG/usr/share
+}

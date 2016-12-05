@@ -1,0 +1,35 @@
+# Description: The GNU Binutils are a collection of binary tools
+# URL:         http://sourceware.org/binutils/
+# Depends on:  zlib
+
+name=binutils
+version=2.25
+release=1
+source=(ftp://ftp.gnu.org/gnu/$name/$name-$version.tar.bz2)
+
+build() {
+	sed -i '/^SUBDIRS/s/doc//' $name-$version/bfd/Makefile.in
+	mkdir build
+	cd build
+	$SRC/$name-$version/configure \
+		--prefix=/usr \
+		--mandir=/usr/man \
+		--with-pic \
+		--enable-shared \
+		--enable-threads \
+		--disable-multilib \
+		--disable-nls \
+		--disable-werror
+
+	make tooldir=/usr
+	make check
+	make tooldir=/usr DESTDIR=$PKG install
+
+	install -m 0644  $SRC/$name-$version/include/{demangle,libiberty}.h $PKG/usr/include
+	rm -rf $PKG/usr/share
+	rm $PKG/usr/lib/ldscripts/{elf_{i386,l1om}*,i386linux*}
+	rm $PKG/usr/man/man1/{dlltool,nlmconv,windres,windmc}*
+
+	sed -i "s|-L$SRC[^ ]* ||g" $PKG/usr/lib/libbfd.la
+	sed -i "s|-L$SRC[^ ]* ||g" $PKG/usr/lib/libopcodes.la
+}

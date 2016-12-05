@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# /etc/ports/drivers/httpup: httpup driver script for ports(8)
+#
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 <file>" >&2
+	exit 1
+fi
+
+error() {
+	echo -e "Error: $@" >&2
+	exit 1
+}
+
+source "$1" 2> /dev/null || error "Couldn't open $1"
+
+[ "$ROOT_DIR" ] || error "ROOT_DIR not set in $1"
+[ "$URL" ] || error "URL not set in $1"
+
+httpup -k sync $URL $ROOT_DIR || error 'Running httpup failed'
+
+# End of file

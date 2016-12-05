@@ -1,0 +1,11 @@
+id:2:initdefault:
+
+rc::sysinit:/etc/rc
+rd:06:wait:/etc/rc.shutdown
+
+c1:2:respawn:/sbin/getty tty1
+c2:2:respawn:/sbin/getty tty2
+c3:2:respawn:/sbin/getty tty3
+c4:2:respawn:/sbin/getty tty4
+
+ca::ctrlaltdel:/sbin/shutdown -r now

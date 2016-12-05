@@ -1,0 +1,44 @@
+# Description: A tool to create disk-at-once and track-at-once CDs.
+# URL: http://cdrecord.berlios.de/old/private/cdrecord.html
+
+name=cdrtools
+version=3.01a31
+release=1
+source=(http://downloads.sourceforge.net/$name/$name-$version.tar.bz2)
+
+build() {
+	export GMAKE_NOWARN=true
+	export MKLINKS_COPY=true
+
+	cd ${name}-${version%%a*}
+
+	find . -type f | xargs sed -i 's|linux/ext2_fs.h|ext2fs/ext2_fs.h|g'
+	sed -i \
+		-e "s|/opt/schily|/usr|g" \
+		-e "s|/usr/src/linux/include|/usr/include|g" \
+		-e "s|DEFINSGRP=.*|DEFINSGRP=root|" \
+		DEFAULTS/Defaults.linux
+
+	sed -i \
+		-e 's/COPTGPROF=[ \t]\+-pg/COPTGPROF=/' \
+		-e 's/C++OPTGPROF=[ \t]\+-pg/C++OPTGPROF=/' \
+		RULES/cc-gcc.rul
+
+	make INS_BASE=/usr INS_RBASE=/
+	make INS_BASE=/usr INS_RBASE=/ DESTDIR=$PKG install
+
+	mv $PKG/usr/share/man $PKG/usr
+	rm -rf	$PKG/etc/default/rscsi \
+		$PKG/usr/bin/{btcflash,cdda2*,devdump,iso{debug,dump,vfy},scg*} \
+		$PKG/usr/{include,lib,sbin,share} \
+		$PKG/usr/man/man1/{btcflash,cdda2*,rscsi,scg*}.1 \
+		$PKG/usr/man/man5 \
+		$PKG/usr/man/man8/{devdump,iso{debug,dump,vfy}}.8
+
+	chmod 644 $PKG/usr/man/man?/*
+	ln -sf mkisofs.8 $PKG/usr/man/man8/mkhybrid.8
+
+	echo 'CDR_DEVICE=default' > $PKG/etc/default/cdrecord
+	echo '# drive name	device	speed	fifosize	driveropts	transfersize' >> $PKG/etc/default/cdrecord
+	echo 'default=	5,0,0	-1	-1		burnfree	126k' >> $PKG/etc/default/cdrecord
+}

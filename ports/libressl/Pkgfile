@@ -1,0 +1,25 @@
+# Description: FREE version of the SSL/TLS protocol forked from OpenSSL - Portable edition
+# URL:         http://www.libressl.org
+
+name=libressl
+version=2.2.2
+release=1
+source=(http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$name-$version.tar.gz \
+	libressl-dummy-rand-egd.patch)
+
+build() {
+	cd $name-$version
+
+	patch -p1 < $SRC/libressl-dummy-rand-egd.patch
+#	patch -p0 < $SRC/libressl-glibc.patch
+#	patch -p0 < $SRC/inttypes.patch
+
+	./configure --prefix=/usr \
+		--mandir=/usr/man \
+		--enable-static=no \
+		--enable-libtls
+
+	make
+	make DESTDIR=$PKG install
+	rm -rf $PKG/usr/man/man3
+}

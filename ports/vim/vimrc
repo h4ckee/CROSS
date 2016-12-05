@@ -1,0 +1,23 @@
+set nocompatible
+set ruler
+set hlsearch
+set incsearch
+set nobackup
+set background=dark
+set ignorecase
+set smartcase
+set nowrap
+set showmatch
+set ttyfast
+set history=500
+set sidescroll=10
+set backspace=indent,eol,start
+set listchars+=precedes:<,extends:>
+nmap <Home> ^
+imap <Home> <Esc>I
+imap <F1> <Esc>:set<Space>nu!<CR>a
+nmap <F1> :set<Space>nu!<CR>
+imap <F2> <Esc>:w<CR>a
+nmap <F2> :w<CR>
+imap <F12> <Esc>:qa<CR>
+nmap <F12> :qa<CR>

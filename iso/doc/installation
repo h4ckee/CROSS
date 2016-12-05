@@ -1,0 +1,34 @@
+
+	CROSS INSTALLATION
+	------------------
+
+fdisk /dev/sda
+
+mkswap -L swap /dev/sda1
+swapon -L swap
+
+mkfs.ext4 -m1 -L root /dev/sda2		# Several GBs
+mkfs.ext4 -m0 -L var /dev/sda3		# Rest of disk space
+
+mount -L root /mnt
+mkdir /mnt/var
+mount -L var /mnt/var
+
+setup
+
+passwd
+useradd -G wheel user
+passwd user
+
+vi /etc/rc.conf
+vi /etc/resolv.conf
+vi /etc/fstab
+vi /boot/syslinux/syslinux.cfg
+
+extlinux -i /boot/syslinux
+cat /boot/syslinux/mbr.bin > /dev/sda
+exit
+reboot
+
+ports -u
+prt-get sysup

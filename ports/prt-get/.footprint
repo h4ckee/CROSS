@@ -1,0 +1,16 @@
+drwxr-xr-x	0/0	etc/
+-rw-r--r--	0/0	etc/prt-get.conf
+drwxr-xr-x	0/0	usr/
+drwxr-xr-x	0/0	usr/bin/
+lrwxrwxrwx	0/0	usr/bin/prt-cache -> prt-get
+-rwxr-xr-x	0/0	usr/bin/prt-get
+drwxr-xr-x	0/0	usr/man/
+drwxr-xr-x	0/0	usr/man/man5/
+-rw-r--r--	0/0	usr/man/man5/prt-get.conf.5.gz
+drwxr-xr-x	0/0	usr/man/man8/
+-rw-r--r--	0/0	usr/man/man8/prt-cache.8.gz
+-rw-r--r--	0/0	usr/man/man8/prt-get.8.gz
+drwxr-xr-x	0/0	var/
+drwxr-xr-x	0/0	var/lib/
+drwxr-xr-x	0/0	var/lib/pkg/
+-rw-r--r--	0/0	var/lib/pkg/prt-get.aliases

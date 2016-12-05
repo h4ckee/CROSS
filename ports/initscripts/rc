@@ -1,0 +1,109 @@
+#!/bin/sh
+#
+# /etc/rc.d/rc: system boot script
+#
+
+fsck_reboot() {
+	echo 'Errors were found, automatic reboot is in progress...'
+	/sbin/killall5 -15
+	sleep 5
+	/sbin/killall5 -9
+	/bin/umount -a -d -n -r
+	/sbin/reboot -d -f -i
+}
+
+. /etc/rc.conf
+
+for DIR in run proc sys; do
+	/bin/mount /${DIR}
+done
+
+: > /run/utmp
+
+/bin/cp -a /lib/udev/devices/* /dev
+/sbin/udevd --daemon
+/sbin/udevadm trigger --type=subsystems --action=add
+/sbin/udevadm trigger --type=devices --action=add
+/sbin/udevadm settle
+
+if [ -e /forcefsck ]; then
+	FORCEFSCK='-f'
+	/bin/rm /forcefsck
+fi
+
+/sbin/fsck -ATC -- -pD $FORCEFSCK
+
+if [[ $? -gt 1 && $? -ne 32 ]]; then
+	fsck_reboot
+fi
+
+/bin/mount -o remount,rw /
+/bin/mount -aO no_netdev
+
+/sbin/swapon -a
+/bin/cat /var/lib/urandom/seed > /dev/urandom
+/sbin/ldconfig &
+
+if [ -e /etc/nologin ]; then
+	/bin/rm /etc/nologin
+fi
+
+if [ -e /etc/sysctl.conf ]; then
+	/sbin/sysctl -q -p
+fi
+
+if [ "$HOSTNAME" ]; then
+	/bin/hostname $HOSTNAME
+	echo "HOSTNAME: $HOSTNAME"
+fi
+
+if [ "$(readlink -n /etc/localtime)" == /usr/share/zoneinfo/${TIMEZONE} ]; then
+	echo "TIMEZONE: $TIMEZONE"
+elif [ -e "/usr/share/zoneinfo/${TIMEZONE}" ]; then
+	/bin/ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+	echo "TIMEZONE: $TIMEZONE"
+fi
+
+/sbin/hwclock --hctosys --localtime
+
+if [ "$FONT" ]; then
+	/usr/bin/setfont $FONT
+	echo "FONT: $FONT"
+fi
+
+if [ "$KEYMAP" ]; then
+	/usr/bin/loadkeys -qu $KEYMAP
+	echo "KEYBOARD: $KEYMAP"
+fi
+
+if [ "$LOCALE" ]; then
+	check_locale() {
+		if ! /usr/bin/fgrep -q "$LOCALE" /etc/profile.d/locale.sh; then
+			echo "export LC_ALL='$LOCALE'" >| /etc/profile.d/locale.sh
+		fi
+		echo "LOCALE: $LOCALE"
+	}
+	if [ -d /usr/lib/locale/${LOCALE} ]; then
+		check_locale
+	else
+		if [[ "$LOCALE" == *@* ]]; then
+			LNG_TER=${LOCALE/.*@/@}
+			LOCALE=${LOCALE%@*}
+		else
+			LNG_TER=${LOCALE%.*}
+		fi
+		CODESET=${LOCALE#*.}
+		/bin/rm -rf /usr/lib/locale/*
+		if /usr/bin/localedef --no-archive --quiet -i $LNG_TER -f $CODESET /usr/lib/locale/${LOCALE}; then
+			check_locale
+		else
+			echo "ERROR: could not compile locale $LOCALE"
+		fi
+	fi
+fi
+
+/usr/bin/setterm -powersave powerdown -powerdown 20
+
+/bin/dmesg > /var/log/boot
+
+# End of file

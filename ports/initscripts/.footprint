@@ -1,0 +1,16 @@
+drwxr-xr-x	0/0	etc/
+-rw-r--r--	0/0	etc/inittab
+-rw-r--r--	0/0	etc/rc.conf
+drwxr-xr-x	0/0	etc/rc.d/
+-rwxr-xr-x	0/0	etc/rc.d/firewall
+-rwxr-xr-x	0/0	etc/rc.d/rc
+-rwxr-xr-x	0/0	etc/rc.d/rc.local
+-rwxr-xr-x	0/0	etc/rc.d/rc.multi
+-rwxr-xr-x	0/0	etc/rc.d/rc.shutdown
+-rwxr-xr-x	0/0	etc/rc.d/rc.single
+drwxr-xr-x	0/0	var/
+drwxr-xr-x	0/0	var/lib/
+drwxr-xr-x	0/0	var/lib/urandom/
+-rw-r-----	0/0	var/lib/urandom/seed (EMPTY)
+drwxr-xr-x	0/0	var/log/
+-rw-r-----	0/0	var/log/boot (EMPTY)

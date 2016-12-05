@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# /etc/rc.local: local multi-user startup script
+#
+
+if [ -d /usr/share/fonts/X11 ]; then
+	for DIR in /usr/share/fonts/X11/{100dpi,75dpi,TTF,cyrillic,misc,local}; do
+		if [[ ! -e "${DIR}/fonts.dir" || "$DIR" -nt "${DIR}/fonts.dir" ]]; then
+			/usr/bin/mkfontdir $DIR &> /dev/null &
+			/usr/bin/mkfontscale $DIR &> /dev/null &
+		fi
+	done
+fi
+
+if [[ -d /var/cache/fontconfig && -z "$(/bin/ls /var/cache/fontconfig/)" ]]; then
+	/usr/bin/fc-cache &> /dev/null &
+fi
+
+if [[ -e /usr/share/X11/locale/locale.alias && ! -L /usr/share/locale/locale.alias ]]; then
+	ln -s /usr/share/{X11/,}locale/locale.alias
+fi
+
+if [ ! -e /usr/lib/gconv/gconv-modules.cache ]; then
+	/usr/sbin/iconvconfig
+fi
+
+# End of file
